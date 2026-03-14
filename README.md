@@ -177,7 +177,7 @@ Base path: `/api/auth`
 **Register**
 ```
 POST /api/auth/register
-{ "email": "user@example.com", "password": "Password123!" }
+{ "username": "yourname", "email": "user@example.com", "password": "Password123!" }
 ```
 
 **Login**
@@ -208,6 +208,7 @@ The SQLite database is located at `database/app.db` and is initialized automatic
 | Column | Type | Constraints | Description |
 |---|---|---|---|
 | id | INTEGER | PRIMARY KEY, AUTOINCREMENT | Unique user identifier |
+| username | TEXT | UNIQUE, NOT NULL | Unique display name |
 | email | TEXT | UNIQUE, NOT NULL | User email address |
 | password_hash | TEXT | NOT NULL | bcrypt hashed password |
 | created_at | TEXT | DEFAULT CURRENT_TIMESTAMP | Account creation time |
@@ -254,9 +255,9 @@ Unit tests are located in `backend/spec/` and follow test-driven development (TD
 |---|---|---|---|
 | authView | authViewSpec.js | 9 | Response formatters |
 | authMiddleware | authMiddlewareSpec.js | 6 | Session guard logic |
-| userModel | userModelSpec.js | 17 | All database query functions |
-| authController | authControllerSpec.js | 32 | All route business logic |
-| **Total** | | **64** | |
+| userModel | userModelSpec.js | 20 | All database query functions including username lookup |
+| authController | authControllerSpec.js | 35 | All route business logic including username uniqueness |
+| **Total** | | **70** | |
 
 ### Acceptance Tests (Cucumber.js)
 Managed by the Testing team. See the Testing team's documentation for scenario definitions and step implementations.

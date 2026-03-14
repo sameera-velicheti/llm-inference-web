@@ -39,19 +39,17 @@
 
   <script>
     // ── Session guard ────────────────────────────────────────
-    // Redirect to login if no authenticated session exists
     (async () => {
       try {
         const res  = await fetch("/api/auth/me");
         const data = await res.json();
 
         if (data.user) {
-          // Show email in badge and personalise welcome message
+          // Badge shows email, welcome message shows username
           document.getElementById("userBadge").textContent = data.user.email;
           document.getElementById("welcomeSub").textContent =
-            `Signed in as ${data.user.email}. Ask me anything.`;
+            `Signed in as ${data.user.username}. Ask me anything.`;
         } else {
-          // No authenticated user — send back to login
           window.location.href = "login.html";
         }
       } catch {

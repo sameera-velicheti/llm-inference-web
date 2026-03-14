@@ -19,6 +19,11 @@
 
     <form class="auth-form" id="registerForm" novalidate>
       <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" placeholder="yourname" autocomplete="username" />
+      </div>
+
+      <div class="form-group">
         <label for="email">Email</label>
         <input type="email" id="email" placeholder="you@example.com" autocomplete="email" />
       </div>
@@ -53,13 +58,19 @@
       e.preventDefault();
       errorMsg.textContent = "";
 
+      const username        = document.getElementById("username").value.trim();
       const email           = document.getElementById("email").value.trim();
       const password        = document.getElementById("password").value;
       const confirmPassword = document.getElementById("confirmPassword").value;
 
       // Client-side validation
-      if (!email || !password || !confirmPassword) {
+      if (!username || !email || !password || !confirmPassword) {
         errorMsg.textContent = "Please fill in all fields.";
+        return;
+      }
+
+      if (username.length < 3) {
+        errorMsg.textContent = "Username must be at least 3 characters.";
         return;
       }
 
@@ -80,7 +91,7 @@
         const res  = await fetch("/api/auth/register", {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify({ email, password })
+          body:    JSON.stringify({ username, email, password })
         });
         const data = await res.json();
 

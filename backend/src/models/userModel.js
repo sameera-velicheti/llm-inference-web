@@ -1,15 +1,23 @@
-const db = require("../config/db"); // Import database connection
+const db = require("../config/db");
 
-// Insert a new user into database
-function createUser(email, passwordHash) { 
+// Insert a new user into the database
+function createUser(username, email, passwordHash) {
   const stmt = db.prepare(`
-    INSERT INTO users (email, password_hash)
-    VALUES (?, ?)
+    INSERT INTO users (username, email, password_hash)
+    VALUES (?, ?, ?)
   `);
-  const result = stmt.run(email, passwordHash);
+  const result = stmt.run(username, email, passwordHash);
 
-  // Return the new user's ID and email
-  return { id: result.lastInsertRowid, email };
+  // Return the new user's ID, username, and email
+  return { id: result.lastInsertRowid, username, email };
+}
+
+// Find a user by their username
+function findUserByUsername(username) {
+  const stmt = db.prepare(`
+    SELECT * FROM users WHERE username = ?
+  `);
+  return stmt.get(username);
 }
 
 // Find a user by their email address
@@ -20,7 +28,7 @@ function findUserByEmail(email) {
   return stmt.get(email);
 }
 
-// Save a password reset token for a user 
+// Save a password reset token for a user
 function saveResetToken(userId, token) {
   const stmt = db.prepare(`
     INSERT INTO password_reset_tokens (user_id, token)
@@ -29,7 +37,7 @@ function saveResetToken(userId, token) {
   stmt.run(userId, token);
 }
 
-// Find a reset token if exists
+// Find a reset token if it exists and is unused
 function findResetToken(token) {
   const stmt = db.prepare(`
     SELECT * FROM password_reset_tokens
@@ -48,7 +56,7 @@ function markResetTokenUsed(token) {
   stmt.run(token);
 }
 
-// Update password in database 
+// Update a user's password in the database
 function updatePassword(userId, passwordHash) {
   const stmt = db.prepare(`
     UPDATE users
@@ -58,6 +66,7 @@ function updatePassword(userId, passwordHash) {
   stmt.run(passwordHash, userId);
 }
 
+// Log a session entry for a user or guest
 function logSession(userId, isGuest) {
   const stmt = db.prepare(`
     INSERT INTO sessions_log (user_id, is_guest)
@@ -66,9 +75,9 @@ function logSession(userId, isGuest) {
   stmt.run(userId, isGuest ? 1 : 0);
 }
 
-// Export all functions for use in other parts of the application
 module.exports = {
   createUser,
+  findUserByUsername,
   findUserByEmail,
   saveResetToken,
   findResetToken,

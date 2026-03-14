@@ -34,27 +34,60 @@ describe("userModel", () => {
       const stmt = fakeStmt({ lastInsertRowid: 42 });
       spyOn(db, "prepare").and.returnValue(stmt);
 
-      userModel.createUser("test@test.com", "hashedpw");
+      userModel.createUser("testuser", "test@test.com", "hashedpw");
 
       expect(db.prepare).toHaveBeenCalledWith(jasmine.stringMatching(/INSERT INTO users/i));
     });
 
-    it("should return the new user's id and email", () => {
+    it("should return the new user's id, username, and email", () => {
       const stmt = fakeStmt({ lastInsertRowid: 7 });
       spyOn(db, "prepare").and.returnValue(stmt);
 
-      const result = userModel.createUser("user@example.com", "hashedpw");
+      const result = userModel.createUser("testuser", "user@example.com", "hashedpw");
 
-      expect(result).toEqual({ id: 7, email: "user@example.com" });
+      expect(result).toEqual({ id: 7, username: "testuser", email: "user@example.com" });
     });
 
-    it("should pass email and passwordHash to stmt.run()", () => {
+    it("should pass username, email, and passwordHash to stmt.run()", () => {
       const stmt = fakeStmt({ lastInsertRowid: 1 });
       spyOn(db, "prepare").and.returnValue(stmt);
 
-      userModel.createUser("a@b.com", "abc123");
+      userModel.createUser("alice", "a@b.com", "abc123");
 
-      expect(stmt.run).toHaveBeenCalledWith("a@b.com", "abc123");
+      expect(stmt.run).toHaveBeenCalledWith("alice", "a@b.com", "abc123");
+    });
+
+  });
+
+  // --- findUserByUsername ---
+  describe("findUserByUsername()", () => {
+
+    it("should call db.prepare with a SELECT statement", () => {
+      const stmt = fakeStmt({}, { id: 1, username: "alice", email: "a@b.com" });
+      spyOn(db, "prepare").and.returnValue(stmt);
+
+      userModel.findUserByUsername("alice");
+
+      expect(db.prepare).toHaveBeenCalledWith(jasmine.stringMatching(/SELECT/i));
+    });
+
+    it("should return the user object when username is found", () => {
+      const fakeUser = { id: 1, username: "alice", email: "a@b.com", password_hash: "hash" };
+      const stmt = fakeStmt({}, fakeUser);
+      spyOn(db, "prepare").and.returnValue(stmt);
+
+      const result = userModel.findUserByUsername("alice");
+
+      expect(result).toEqual(fakeUser);
+    });
+
+    it("should return undefined when username is not found", () => {
+      const stmt = fakeStmt({}, undefined);
+      spyOn(db, "prepare").and.returnValue(stmt);
+
+      const result = userModel.findUserByUsername("ghost");
+
+      expect(result).toBeUndefined();
     });
 
   });
@@ -63,7 +96,7 @@ describe("userModel", () => {
   describe("findUserByEmail()", () => {
 
     it("should call db.prepare with a SELECT statement", () => {
-      const stmt = fakeStmt({}, { id: 1, email: "a@b.com" });
+      const stmt = fakeStmt({}, { id: 1, username: "alice", email: "a@b.com" });
       spyOn(db, "prepare").and.returnValue(stmt);
 
       userModel.findUserByEmail("a@b.com");
@@ -72,7 +105,7 @@ describe("userModel", () => {
     });
 
     it("should return the user object when found", () => {
-      const fakeUser = { id: 1, email: "a@b.com", password_hash: "hash" };
+      const fakeUser = { id: 1, username: "alice", email: "a@b.com", password_hash: "hash" };
       const stmt = fakeStmt({}, fakeUser);
       spyOn(db, "prepare").and.returnValue(stmt);
 

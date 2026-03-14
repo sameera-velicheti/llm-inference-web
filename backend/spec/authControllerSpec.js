@@ -30,27 +30,7 @@ describe("authController", () => {
 
   describe("register()", () => {
 
-    it("should return 400 if email is missing", async () => {
-      const req = mockReq({ body: { password: "Password1!" } });
-      const res = mockRes();
-
-      await authController.register(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-    });
-
-    it("should return 400 if password is missing", async () => {
-      const req = mockReq({ body: { email: "a@b.com" } });
-      const res = mockRes();
-
-      await authController.register(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-    });
-
-    it("should return 400 if user already exists", async () => {
-      spyOn(userModel, "findUserByEmail").and.returnValue({ id: 1, email: "a@b.com" });
-
+    it("should return 400 if username is missing", async () => {
       const req = mockReq({ body: { email: "a@b.com", password: "Password1!" } });
       const res = mockRes();
 
@@ -59,38 +39,81 @@ describe("authController", () => {
       expect(res.status).toHaveBeenCalledWith(400);
     });
 
+    it("should return 400 if email is missing", async () => {
+      const req = mockReq({ body: { username: "alice", password: "Password1!" } });
+      const res = mockRes();
+
+      await authController.register(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    it("should return 400 if password is missing", async () => {
+      const req = mockReq({ body: { username: "alice", email: "a@b.com" } });
+      const res = mockRes();
+
+      await authController.register(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    it("should return 400 if username is already taken", async () => {
+      spyOn(userModel, "findUserByUsername").and.returnValue({ id: 2, username: "alice", email: "other@b.com" });
+
+      const req = mockReq({ body: { username: "alice", email: "new@b.com", password: "Password1!" } });
+      const res = mockRes();
+
+      await authController.register(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    it("should return 400 if user already exists", async () => {
+      spyOn(userModel, "findUserByUsername").and.returnValue(undefined);
+      spyOn(userModel, "findUserByEmail").and.returnValue({ id: 1, username: "alice", email: "a@b.com" });
+
+      const req = mockReq({ body: { username: "alice", email: "a@b.com", password: "Password1!" } });
+      const res = mockRes();
+
+      await authController.register(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
     it("should return 201 and set session on successful registration", async () => {
+      spyOn(userModel, "findUserByUsername").and.returnValue(undefined);
       spyOn(userModel, "findUserByEmail").and.returnValue(undefined);
       spyOn(bcrypt, "hash").and.resolveTo("hashedpw");
-      spyOn(userModel, "createUser").and.returnValue({ id: 5, email: "new@b.com" });
+      spyOn(userModel, "createUser").and.returnValue({ id: 5, username: "alice", email: "new@b.com" });
 
-      const req = mockReq({ body: { email: "new@b.com", password: "Password1!" } });
+      const req = mockReq({ body: { username: "alice", email: "new@b.com", password: "Password1!" } });
       const res = mockRes();
 
       await authController.register(req, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
-      expect(req.session.user).toEqual({ id: 5, email: "new@b.com" });
+      expect(req.session.user).toEqual({ id: 5, username: "alice", email: "new@b.com" });
     });
 
     it("should hash the password before storing it", async () => {
+      spyOn(userModel, "findUserByUsername").and.returnValue(undefined);
       spyOn(userModel, "findUserByEmail").and.returnValue(undefined);
       spyOn(bcrypt, "hash").and.resolveTo("hashedpw");
-      spyOn(userModel, "createUser").and.returnValue({ id: 5, email: "new@b.com" });
+      spyOn(userModel, "createUser").and.returnValue({ id: 5, username: "alice", email: "new@b.com" });
 
-      const req = mockReq({ body: { email: "new@b.com", password: "Password1!" } });
+      const req = mockReq({ body: { username: "alice", email: "new@b.com", password: "Password1!" } });
       const res = mockRes();
 
       await authController.register(req, res);
 
       expect(bcrypt.hash).toHaveBeenCalledWith("Password1!", 10);
-      expect(userModel.createUser).toHaveBeenCalledWith("new@b.com", "hashedpw");
+      expect(userModel.createUser).toHaveBeenCalledWith("alice", "new@b.com", "hashedpw");
     });
 
     it("should return 500 if an unexpected error occurs", async () => {
-      spyOn(userModel, "findUserByEmail").and.throwError("DB crash");
+      spyOn(userModel, "findUserByUsername").and.throwError("DB crash");
 
-      const req = mockReq({ body: { email: "a@b.com", password: "pw" } });
+      const req = mockReq({ body: { username: "alice", email: "a@b.com", password: "pw" } });
       const res = mockRes();
 
       await authController.register(req, res);
@@ -135,7 +158,7 @@ describe("authController", () => {
 
     it("should return 401 if password does not match", async () => {
       spyOn(userModel, "findUserByEmail").and.returnValue({
-        id: 1, email: "a@b.com", password_hash: "oldhash"
+        id: 1, username: "alice", email: "a@b.com", password_hash: "oldhash"
       });
       spyOn(bcrypt, "compare").and.resolveTo(false);
 
@@ -149,7 +172,7 @@ describe("authController", () => {
 
     it("should return 200 and set session on successful login", async () => {
       spyOn(userModel, "findUserByEmail").and.returnValue({
-        id: 1, email: "a@b.com", password_hash: "correcthash"
+        id: 1, username: "alice", email: "a@b.com", password_hash: "correcthash"
       });
       spyOn(bcrypt, "compare").and.resolveTo(true);
 
@@ -159,7 +182,7 @@ describe("authController", () => {
       await authController.login(req, res);
 
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(req.session.user).toEqual({ id: 1, email: "a@b.com" });
+      expect(req.session.user).toEqual({ id: 1, username: "alice", email: "a@b.com" });
     });
 
     it("should return 500 on unexpected error", async () => {
@@ -274,30 +297,30 @@ describe("authController", () => {
     });
 
     it("should return 200 and a token if user exists", () => {
-    spyOn(userModel, "findUserByEmail").and.returnValue({ id: 2, email: "a@b.com" });
-    spyOn(userModel, "saveResetToken");
+      spyOn(userModel, "findUserByEmail").and.returnValue({ id: 2, email: "a@b.com" });
+      spyOn(userModel, "saveResetToken");
 
-    const req = mockReq({ body: { email: "a@b.com" } });
-    const res = mockRes();
+      const req = mockReq({ body: { email: "a@b.com" } });
+      const res = mockRes();
 
-    authController.forgotPassword(req, res);
+      authController.forgotPassword(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith(
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(
         jasmine.objectContaining({ token: jasmine.any(String) })
-    );
+      );
     });
 
     it("should save the reset token to the database", () => {
-    spyOn(userModel, "findUserByEmail").and.returnValue({ id: 2, email: "a@b.com" });
-    spyOn(userModel, "saveResetToken");
+      spyOn(userModel, "findUserByEmail").and.returnValue({ id: 2, email: "a@b.com" });
+      spyOn(userModel, "saveResetToken");
 
-    const req = mockReq({ body: { email: "a@b.com" } });
-    const res = mockRes();
+      const req = mockReq({ body: { email: "a@b.com" } });
+      const res = mockRes();
 
-    authController.forgotPassword(req, res);
+      authController.forgotPassword(req, res);
 
-    expect(userModel.saveResetToken).toHaveBeenCalledWith(2, jasmine.any(String));
+      expect(userModel.saveResetToken).toHaveBeenCalledWith(2, jasmine.any(String));
     });
 
   });
@@ -391,13 +414,13 @@ describe("authController", () => {
     });
 
     it("should return user from session if logged in", () => {
-      const req = mockReq({ session: { user: { id: 1, email: "a@b.com" } } });
+      const req = mockReq({ session: { user: { id: 1, username: "alice", email: "a@b.com" } } });
       const res = mockRes();
 
       authController.me(req, res);
 
       expect(res.json).toHaveBeenCalledWith(
-        jasmine.objectContaining({ user: { id: 1, email: "a@b.com" } })
+        jasmine.objectContaining({ user: { id: 1, username: "alice", email: "a@b.com" } })
       );
     });
 
