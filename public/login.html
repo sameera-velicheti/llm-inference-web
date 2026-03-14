@@ -25,7 +25,10 @@
 
       <div class="form-group">
         <label for="password">Password</label>
-        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+        <div class="password-wrapper">
+          <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+          <button type="button" class="toggle-pw" data-target="password">Show</button>
+        </div>
       </div>
 
       <div class="error-msg" id="errorMsg"></div>
@@ -41,6 +44,15 @@
   </div>
 
   <script>
+    document.querySelectorAll(".toggle-pw").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const input = document.getElementById(btn.dataset.target);
+        const show  = input.type === "password";
+        input.type  = show ? "text" : "password";
+        btn.textContent = show ? "Hide" : "Show";
+      });
+    });
+
     const form      = document.getElementById("loginForm");
     const errorMsg  = document.getElementById("errorMsg");
     const submitBtn = document.getElementById("submitBtn");

@@ -414,7 +414,34 @@ input:focus { border-color: var(--text); }
 .chat-send-btn:hover { background: #333330; }
 .chat-send-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
-/* ─── Animations ─────────────────────────────────────────────── */
+/* ─── Password toggle ────────────────────────────────────────── */
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-wrapper input {
+  padding-right: 2.75rem;
+}
+
+.toggle-pw {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-family: var(--font-body);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  transition: color 0.15s;
+  user-select: none;
+}
+.toggle-pw:hover { color: var(--text); }
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
