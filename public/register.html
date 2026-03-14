@@ -118,6 +118,11 @@
 
         if (data.success) {
           window.location.href = "chat-user.html";
+        } else if (data.error === "User already exists") {
+          errorMsg.textContent  = "An account with this email already exists. Redirecting to sign in…";
+          submitBtn.disabled    = false;
+          submitBtn.textContent = "Create account";
+          setTimeout(() => { window.location.href = "login.html"; }, 2000);
         } else {
           errorMsg.textContent  = data.error || "Could not create account.";
           submitBtn.disabled    = false;
