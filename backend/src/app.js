@@ -1,6 +1,7 @@
 const express = require("express");
 const session = require("express-session");
 const cookieParser = require("cookie-parser");
+const path = require("path");
 
 // Import auth routes
 const authRoutes = require("./routes/authRoutes");
@@ -21,10 +22,9 @@ app.use(
   })
 );
 
-app.use("/api/auth", authRoutes);
+// Serve static frontend files from the public directory
+app.use(express.static(path.join(__dirname, "../../public")));
 
-app.get("/", (req, res) => {
-  res.send("LLM Web Inference backend is running.");
-});
+app.use("/api/auth", authRoutes);
 
 module.exports = app;
