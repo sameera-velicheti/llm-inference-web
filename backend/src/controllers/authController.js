@@ -12,6 +12,12 @@ async function register(req, res) {
       return res.status(400).json(authView.errorResponse("Username, email, and password are required"));
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json(authView.errorResponse("Please enter a valid email address"));
+    }
+
     // Check if username is already taken
     const existingUsername = userModel.findUserByUsername(username);
     if (existingUsername) {

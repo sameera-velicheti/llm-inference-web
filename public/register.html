@@ -74,6 +74,12 @@
         return;
       }
 
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        errorMsg.textContent = "Please enter a valid email address.";
+        return;
+      }
+
       if (password !== confirmPassword) {
         errorMsg.textContent = "Passwords do not match.";
         return;
