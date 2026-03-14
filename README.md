@@ -179,6 +179,7 @@ Base path: `/api/auth`
 POST /api/auth/register
 { "username": "yourname", "email": "user@example.com", "password": "Password123!" }
 ```
+Validation rules: all fields required, email must be a valid format, username must be unique, email must be unique.
 
 **Login**
 ```
@@ -256,7 +257,7 @@ Unit tests are located in `backend/spec/` and follow test-driven development (TD
 | authView | authViewSpec.js | 9 | Response formatters |
 | authMiddleware | authMiddlewareSpec.js | 6 | Session guard logic |
 | userModel | userModelSpec.js | 20 | All database query functions including username lookup |
-| authController | authControllerSpec.js | 35 | All route business logic including username uniqueness |
+| authController | authControllerSpec.js | 35 | All route business logic including username uniqueness and email format validation |
 | **Total** | | **70** | |
 
 ### Acceptance Tests (Cucumber.js)

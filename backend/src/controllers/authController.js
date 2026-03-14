@@ -1,189 +1,459 @@
-const bcrypt = require("bcrypt");
-const { v4: uuidv4 } = require("uuid");
-const userModel = require("../models/userModel");
-const authView = require("../views/authView");
+// All external dependencies (userModel, bcrypt, uuid) are spied on,
+// so no real DB or crypto operations run during these unit tests.
 
-// Register a new user
-async function register(req, res) {
-  try {
-    const { username, email, password } = req.body;
+const userModel = require("../src/models/userModel");
+const bcrypt    = require("bcrypt");
 
-    if (!username || !email || !password) {
-      return res.status(400).json(authView.errorResponse("Username, email, and password are required"));
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json(authView.errorResponse("Please enter a valid email address"));
-    }
-
-    // Check if username is already taken
-    const existingUsername = userModel.findUserByUsername(username);
-    if (existingUsername) {
-      return res.status(400).json(authView.errorResponse("Username is already taken"));
-    }
-
-    // Check if email is already registered
-    const existingUser = userModel.findUserByEmail(email);
-    if (existingUser) {
-      return res.status(400).json(authView.errorResponse("User already exists"));
-    }
-
-    // Hash the password before saving
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    // Create the new user
-    const user = userModel.createUser(username, email, passwordHash);
-
-    // Save user to session so they are logged in immediately
-    req.session.user = { id: user.id, username: user.username, email: user.email };
-
-    return res.status(201).json(
-      authView.successResponse("Account created successfully", { user: req.session.user })
-    );
-  } catch (error) {
-    return res.status(500).json(authView.errorResponse("Server error"));
-  }
+// Helper: builds a mock Express request
+function mockReq({ body = {}, session = {}, query = {} } = {}) {
+  return { body, session, query };
 }
 
-// Log into an existing user account
-async function login(req, res) {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json(authView.errorResponse("Email and password are required"));
-    }
-
-    const user = userModel.findUserByEmail(email);
-    if (!user) {
-      return res.status(401).json(authView.errorResponse("Invalid credentials"));
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password_hash);
-    if (!isMatch) {
-      return res.status(401).json(authView.errorResponse("Invalid credentials"));
-    }
-
-    // Store username, email, and id in session
-    req.session.user = { id: user.id, username: user.username, email: user.email };
-
-    return res.status(200).json(
-      authView.successResponse("Login successful", { user: req.session.user })
-    );
-  } catch (error) {
-    return res.status(500).json(authView.errorResponse("Server error"));
-  }
+// Helper: builds a mock Express response that chains .status().json()
+function mockRes() {
+  const res = {};
+  res.status = jasmine.createSpy("status").and.returnValue(res);
+  res.json   = jasmine.createSpy("json").and.returnValue(res);
+  return res;
 }
 
-// Log out of current session
-function logout(req, res) {
-  req.session.destroy(() => {
-    return res.status(200).json(authView.successResponse("Logout successful"));
+describe("authController", () => {
+
+  let authController;
+
+  beforeEach(() => {
+    authController = require("../src/controllers/authController");
   });
-}
 
-// Create a guest session
-function guest(req, res) {
-  try {
-    userModel.logSession(null, true);
-    req.session.guest = true;
+  // ─── register ───────────────────────────────────────────────────────────────
 
-    return res.status(200).json(
-      authView.successResponse("Guest session created", { guest: true })
-    );
-  } catch (error) {
-    return res.status(500).json(authView.errorResponse("Server error"));
-  }
-}
+  describe("register()", () => {
 
-// Initiate password reset — generate and return a reset token
-function forgotPassword(req, res) {
-  try {
-    const { email } = req.body;
+    it("should return 400 if username is missing", async () => {
+      const req = mockReq({ body: { email: "a@b.com", password: "Password1!" } });
+      const res = mockRes();
 
-    if (!email) {
-      return res.status(400).json(authView.errorResponse("Email is required"));
-    }
+      await authController.register(req, res);
 
-    const user = userModel.findUserByEmail(email);
-    if (!user) {
-      return res.status(404).json(authView.errorResponse("User not found"));
-    }
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
 
-    const token = uuidv4();
-    userModel.saveResetToken(user.id, token);
+    it("should return 400 if email is missing", async () => {
+      const req = mockReq({ body: { username: "alice", password: "Password1!" } });
+      const res = mockRes();
 
-    return res.status(200).json(
-      authView.successResponse("Password reset token created", { token })
-    );
-  } catch (error) {
-    return res.status(500).json(authView.errorResponse("Server error"));
-  }
-}
+      await authController.register(req, res);
 
-// Reset password using a valid token
-async function resetPassword(req, res) {
-  try {
-    const { token, newPassword } = req.body;
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
 
-    if (!token || !newPassword) {
-      return res.status(400).json(authView.errorResponse("Token and new password are required"));
-    }
+    it("should return 400 if password is missing", async () => {
+      const req = mockReq({ body: { username: "alice", email: "a@b.com" } });
+      const res = mockRes();
 
-    const tokenRecord = userModel.findResetToken(token);
-    if (!tokenRecord) {
-      return res.status(400).json(authView.errorResponse("Invalid or used reset token"));
-    }
+      await authController.register(req, res);
 
-    const passwordHash = await bcrypt.hash(newPassword, 10);
-    userModel.updatePassword(tokenRecord.user_id, passwordHash);
-    userModel.markResetTokenUsed(token);
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
 
-    return res.status(200).json(authView.successResponse("Password reset successful"));
-  } catch (error) {
-    return res.status(500).json(authView.errorResponse("Server error"));
-  }
-}
+    it("should return 400 if email format is invalid", async () => {
+      const req = mockReq({ body: { username: "alice", email: "notanemail", password: "Password1!" } });
+      const res = mockRes();
 
-// Mock CAS login for testing purposes
-function casLogin(req, res) {
-  try {
-    const { netid } = req.query;
+      await authController.register(req, res);
 
-    if (!netid) {
-      return res.status(400).json(authView.errorResponse("NetID is required"));
-    }
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
 
-    req.session.casUser = { netid };
+    it("should return 400 if username is already taken", async () => {
+      spyOn(userModel, "findUserByUsername").and.returnValue({ id: 2, username: "alice", email: "other@b.com" });
 
-    return res.status(200).json(
-      authView.successResponse("CAS login successful (mock)", { netid })
-    );
-  } catch (error) {
-    return res.status(500).json(authView.errorResponse("Server error"));
-  }
-}
+      const req = mockReq({ body: { username: "alice", email: "new@b.com", password: "Password1!" } });
+      const res = mockRes();
 
-// Return current session info
-function me(req, res) {
-  return res.status(200).json(
-    authView.successResponse("Current session retrieved", {
-      user: req.session.user || null,
-      guest: req.session.guest || false,
-      casUser: req.session.casUser || null
-    })
-  );
-}
+      await authController.register(req, res);
 
-module.exports = {
-  register,
-  login,
-  logout,
-  guest,
-  forgotPassword,
-  resetPassword,
-  casLogin,
-  me
-};
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    it("should return 400 if user already exists", async () => {
+      spyOn(userModel, "findUserByUsername").and.returnValue(undefined);
+      spyOn(userModel, "findUserByEmail").and.returnValue({ id: 1, username: "alice", email: "a@b.com" });
+
+      const req = mockReq({ body: { username: "alice", email: "a@b.com", password: "Password1!" } });
+      const res = mockRes();
+
+      await authController.register(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    it("should return 201 and set session on successful registration", async () => {
+      spyOn(userModel, "findUserByUsername").and.returnValue(undefined);
+      spyOn(userModel, "findUserByEmail").and.returnValue(undefined);
+      spyOn(bcrypt, "hash").and.resolveTo("hashedpw");
+      spyOn(userModel, "createUser").and.returnValue({ id: 5, username: "alice", email: "new@b.com" });
+
+      const req = mockReq({ body: { username: "alice", email: "new@b.com", password: "Password1!" } });
+      const res = mockRes();
+
+      await authController.register(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(201);
+      expect(req.session.user).toEqual({ id: 5, username: "alice", email: "new@b.com" });
+    });
+
+    it("should hash the password before storing it", async () => {
+      spyOn(userModel, "findUserByUsername").and.returnValue(undefined);
+      spyOn(userModel, "findUserByEmail").and.returnValue(undefined);
+      spyOn(bcrypt, "hash").and.resolveTo("hashedpw");
+      spyOn(userModel, "createUser").and.returnValue({ id: 5, username: "alice", email: "new@b.com" });
+
+      const req = mockReq({ body: { username: "alice", email: "new@b.com", password: "Password1!" } });
+      const res = mockRes();
+
+      await authController.register(req, res);
+
+      expect(bcrypt.hash).toHaveBeenCalledWith("Password1!", 10);
+      expect(userModel.createUser).toHaveBeenCalledWith("alice", "new@b.com", "hashedpw");
+    });
+
+    it("should return 500 if an unexpected error occurs", async () => {
+      spyOn(userModel, "findUserByUsername").and.throwError("DB crash");
+
+      const req = mockReq({ body: { username: "alice", email: "a@b.com", password: "pw" } });
+      const res = mockRes();
+
+      await authController.register(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
+
+  });
+
+  // ─── login ───────────────────────────────────────────────────────────────────
+
+  describe("login()", () => {
+
+    it("should return 400 if email is missing", async () => {
+      const req = mockReq({ body: { password: "pw" } });
+      const res = mockRes();
+
+      await authController.login(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    it("should return 400 if password is missing", async () => {
+      const req = mockReq({ body: { email: "a@b.com" } });
+      const res = mockRes();
+
+      await authController.login(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    it("should return 401 if user is not found", async () => {
+      spyOn(userModel, "findUserByEmail").and.returnValue(undefined);
+
+      const req = mockReq({ body: { email: "ghost@b.com", password: "pw" } });
+      const res = mockRes();
+
+      await authController.login(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+    });
+
+    it("should return 401 if password does not match", async () => {
+      spyOn(userModel, "findUserByEmail").and.returnValue({
+        id: 1, username: "alice", email: "a@b.com", password_hash: "oldhash"
+      });
+      spyOn(bcrypt, "compare").and.resolveTo(false);
+
+      const req = mockReq({ body: { email: "a@b.com", password: "wrongpw" } });
+      const res = mockRes();
+
+      await authController.login(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+    });
+
+    it("should return 200 and set session on successful login", async () => {
+      spyOn(userModel, "findUserByEmail").and.returnValue({
+        id: 1, username: "alice", email: "a@b.com", password_hash: "correcthash"
+      });
+      spyOn(bcrypt, "compare").and.resolveTo(true);
+
+      const req = mockReq({ body: { email: "a@b.com", password: "correctpw" } });
+      const res = mockRes();
+
+      await authController.login(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(req.session.user).toEqual({ id: 1, username: "alice", email: "a@b.com" });
+    });
+
+    it("should return 500 on unexpected error", async () => {
+      spyOn(userModel, "findUserByEmail").and.throwError("DB crash");
+
+      const req = mockReq({ body: { email: "a@b.com", password: "pw" } });
+      const res = mockRes();
+
+      await authController.login(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
+
+  });
+
+  // ─── logout ──────────────────────────────────────────────────────────────────
+
+  describe("logout()", () => {
+
+    it("should call session.destroy()", () => {
+      const req = mockReq({ session: { destroy: jasmine.createSpy("destroy").and.callFake(cb => cb()) } });
+      const res = mockRes();
+
+      authController.logout(req, res);
+
+      expect(req.session.destroy).toHaveBeenCalled();
+    });
+
+    it("should return 200 after destroying session", () => {
+      const req = mockReq({ session: { destroy: jasmine.createSpy("destroy").and.callFake(cb => cb()) } });
+      const res = mockRes();
+
+      authController.logout(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+  });
+
+  // ─── guest ───────────────────────────────────────────────────────────────────
+
+  describe("guest()", () => {
+
+    it("should set session.guest to true", () => {
+      spyOn(userModel, "logSession");
+
+      const req = mockReq();
+      const res = mockRes();
+
+      authController.guest(req, res);
+
+      expect(req.session.guest).toBe(true);
+    });
+
+    it("should return 200 on success", () => {
+      spyOn(userModel, "logSession");
+
+      const req = mockReq();
+      const res = mockRes();
+
+      authController.guest(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it("should log the guest session in the database", () => {
+      spyOn(userModel, "logSession");
+
+      const req = mockReq();
+      const res = mockRes();
+
+      authController.guest(req, res);
+
+      expect(userModel.logSession).toHaveBeenCalledWith(null, true);
+    });
+
+    it("should return 500 if logSession throws", () => {
+      spyOn(userModel, "logSession").and.throwError("DB error");
+
+      const req = mockReq();
+      const res = mockRes();
+
+      authController.guest(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
+
+  });
+
+  // ─── forgotPassword ──────────────────────────────────────────────────────────
+
+  describe("forgotPassword()", () => {
+
+    it("should return 400 if email is missing", () => {
+      const req = mockReq({ body: {} });
+      const res = mockRes();
+
+      authController.forgotPassword(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    it("should return 404 if user is not found", () => {
+      spyOn(userModel, "findUserByEmail").and.returnValue(undefined);
+
+      const req = mockReq({ body: { email: "ghost@b.com" } });
+      const res = mockRes();
+
+      authController.forgotPassword(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+    });
+
+    it("should return 200 and a token if user exists", () => {
+      spyOn(userModel, "findUserByEmail").and.returnValue({ id: 2, email: "a@b.com" });
+      spyOn(userModel, "saveResetToken");
+
+      const req = mockReq({ body: { email: "a@b.com" } });
+      const res = mockRes();
+
+      authController.forgotPassword(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(
+        jasmine.objectContaining({ token: jasmine.any(String) })
+      );
+    });
+
+    it("should save the reset token to the database", () => {
+      spyOn(userModel, "findUserByEmail").and.returnValue({ id: 2, email: "a@b.com" });
+      spyOn(userModel, "saveResetToken");
+
+      const req = mockReq({ body: { email: "a@b.com" } });
+      const res = mockRes();
+
+      authController.forgotPassword(req, res);
+
+      expect(userModel.saveResetToken).toHaveBeenCalledWith(2, jasmine.any(String));
+    });
+
+  });
+
+  // ─── resetPassword ───────────────────────────────────────────────────────────
+
+  describe("resetPassword()", () => {
+
+    it("should return 400 if token is missing", async () => {
+      const req = mockReq({ body: { newPassword: "NewPw1!" } });
+      const res = mockRes();
+
+      await authController.resetPassword(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    it("should return 400 if newPassword is missing", async () => {
+      const req = mockReq({ body: { token: "some-token" } });
+      const res = mockRes();
+
+      await authController.resetPassword(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    it("should return 400 if token is invalid or already used", async () => {
+      spyOn(userModel, "findResetToken").and.returnValue(undefined);
+
+      const req = mockReq({ body: { token: "bad-token", newPassword: "NewPw1!" } });
+      const res = mockRes();
+
+      await authController.resetPassword(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    it("should return 200 on successful password reset", async () => {
+      spyOn(userModel, "findResetToken").and.returnValue({ id: 1, user_id: 3, token: "good-token", used: 0 });
+      spyOn(bcrypt, "hash").and.resolveTo("newhashedpw");
+      spyOn(userModel, "updatePassword");
+      spyOn(userModel, "markResetTokenUsed");
+
+      const req = mockReq({ body: { token: "good-token", newPassword: "NewPw1!" } });
+      const res = mockRes();
+
+      await authController.resetPassword(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it("should update the password and mark token as used", async () => {
+      spyOn(userModel, "findResetToken").and.returnValue({ id: 1, user_id: 3, token: "good-token", used: 0 });
+      spyOn(bcrypt, "hash").and.resolveTo("newhashedpw");
+      spyOn(userModel, "updatePassword");
+      spyOn(userModel, "markResetTokenUsed");
+
+      const req = mockReq({ body: { token: "good-token", newPassword: "NewPw1!" } });
+      const res = mockRes();
+
+      await authController.resetPassword(req, res);
+
+      expect(userModel.updatePassword).toHaveBeenCalledWith(3, "newhashedpw");
+      expect(userModel.markResetTokenUsed).toHaveBeenCalledWith("good-token");
+    });
+
+    it("should return 500 on unexpected error", async () => {
+      spyOn(userModel, "findResetToken").and.throwError("DB crash");
+
+      const req = mockReq({ body: { token: "t", newPassword: "pw" } });
+      const res = mockRes();
+
+      await authController.resetPassword(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
+
+  });
+
+  // ─── me ──────────────────────────────────────────────────────────────────────
+
+  describe("me()", () => {
+
+    it("should return 200", () => {
+      const req = mockReq({ session: {} });
+      const res = mockRes();
+
+      authController.me(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it("should return user from session if logged in", () => {
+      const req = mockReq({ session: { user: { id: 1, username: "alice", email: "a@b.com" } } });
+      const res = mockRes();
+
+      authController.me(req, res);
+
+      expect(res.json).toHaveBeenCalledWith(
+        jasmine.objectContaining({ user: { id: 1, username: "alice", email: "a@b.com" } })
+      );
+    });
+
+    it("should return guest: true if in a guest session", () => {
+      const req = mockReq({ session: { guest: true } });
+      const res = mockRes();
+
+      authController.me(req, res);
+
+      expect(res.json).toHaveBeenCalledWith(
+        jasmine.objectContaining({ guest: true })
+      );
+    });
+
+    it("should return null user and false guest when no session", () => {
+      const req = mockReq({ session: {} });
+      const res = mockRes();
+
+      authController.me(req, res);
+
+      expect(res.json).toHaveBeenCalledWith(
+        jasmine.objectContaining({ user: null, guest: false })
+      );
+    });
+
+  });
+
+});
