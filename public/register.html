@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Inference — Create Account</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="auth-body">
+
+  <div class="auth-card">
+    <div class="card-logo">&#x25C6; LLM Interface</div>
+
+    <h1>Create an account.</h1>
+    <p class="card-sub">Start saving your conversations today.</p>
+
+    <form class="auth-form" id="registerForm" novalidate>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="you@example.com" autocomplete="email" />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="••••••••" autocomplete="new-password" />
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword">Confirm password</label>
+        <input type="password" id="confirmPassword" placeholder="••••••••" autocomplete="new-password" />
+      </div>
+
+      <div class="error-msg" id="errorMsg"></div>
+
+      <button type="submit" class="btn btn-primary" id="submitBtn">Create account</button>
+    </form>
+
+    <div class="card-links">
+      <span>Already have an account? <a href="login.html">Sign in</a></span>
+      <span>Just browsing? <a href="#" id="guestLink">Continue as guest</a></span>
+    </div>
+  </div>
+
+  <script>
+    const form      = document.getElementById("registerForm");
+    const errorMsg  = document.getElementById("errorMsg");
+    const submitBtn = document.getElementById("submitBtn");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorMsg.textContent = "";
+
+      const email           = document.getElementById("email").value.trim();
+      const password        = document.getElementById("password").value;
+      const confirmPassword = document.getElementById("confirmPassword").value;
+
+      // Client-side validation
+      if (!email || !password || !confirmPassword) {
+        errorMsg.textContent = "Please fill in all fields.";
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        errorMsg.textContent = "Passwords do not match.";
+        return;
+      }
+
+      if (password.length < 6) {
+        errorMsg.textContent = "Password must be at least 6 characters.";
+        return;
+      }
+
+      submitBtn.disabled    = true;
+      submitBtn.textContent = "Creating account…";
+
+      try {
+        const res  = await fetch("/api/auth/register", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          window.location.href = "chat-user.html";
+        } else {
+          errorMsg.textContent  = data.error || "Could not create account.";
+          submitBtn.disabled    = false;
+          submitBtn.textContent = "Create account";
+        }
+      } catch (err) {
+        errorMsg.textContent  = "Server error. Is the backend running?";
+        submitBtn.disabled    = false;
+        submitBtn.textContent = "Create account";
+      }
+    });
+
+    document.getElementById("guestLink").addEventListener("click", async (e) => {
+      e.preventDefault();
+      try {
+        const res  = await fetch("/api/auth/guest", { method: "POST" });
+        const data = await res.json();
+        if (data.success) {
+          window.location.href = "chat-guest.html";
+        } else {
+          errorMsg.textContent = "Could not start guest session.";
+        }
+      } catch (err) {
+        errorMsg.textContent = "Server error. Is the backend running?";
+      }
+    });
+  </script>
+
+</body>
+</html>
