@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Inference — Sign In</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="auth-body">
+
+  <div class="auth-card">
+    <div class="card-logo">&#x25C6; LLM Interface</div>
+
+    <h1>Welcome back.</h1>
+    <p class="card-sub">Sign in to access your chat history.</p>
+
+    <form class="auth-form" id="loginForm" novalidate>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="you@example.com" autocomplete="email" />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+
+      <div class="error-msg" id="errorMsg"></div>
+
+      <button type="submit" class="btn btn-primary" id="submitBtn">Sign in</button>
+    </form>
+
+    <div class="card-links">
+      <span>No account? <a href="register.html">Create one</a></span>
+      <span>Forgot your password? <a href="reset-password.html">Reset it</a></span>
+      <span>Just browsing? <a href="#" id="guestLink">Continue as guest</a></span>
+    </div>
+  </div>
+
+  <script>
+    const form      = document.getElementById("loginForm");
+    const errorMsg  = document.getElementById("errorMsg");
+    const submitBtn = document.getElementById("submitBtn");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorMsg.textContent = "";
+
+      const email    = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      if (!email || !password) {
+        errorMsg.textContent = "Please enter your email and password.";
+        return;
+      }
+
+      submitBtn.disabled   = true;
+      submitBtn.textContent = "Signing in…";
+
+      try {
+        const res  = await fetch("/api/auth/login", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          window.location.href = "chat-user.html";
+        } else {
+          errorMsg.textContent = data.error || "Invalid credentials.";
+          submitBtn.disabled   = false;
+          submitBtn.textContent = "Sign in";
+        }
+      } catch (err) {
+        errorMsg.textContent  = "Server error. Is the backend running?";
+        submitBtn.disabled    = false;
+        submitBtn.textContent = "Sign in";
+      }
+    });
+
+    document.getElementById("guestLink").addEventListener("click", async (e) => {
+      e.preventDefault();
+      try {
+        const res  = await fetch("/api/auth/guest", { method: "POST" });
+        const data = await res.json();
+        if (data.success) {
+          window.location.href = "chat-guest.html";
+        } else {
+          errorMsg.textContent = "Could not start guest session.";
+        }
+      } catch (err) {
+        errorMsg.textContent = "Server error. Is the backend running?";
+      }
+    });
+  </script>
+
+</body>
+</html>
