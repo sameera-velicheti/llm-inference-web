@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Inference — Home</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="landing-body">
+
+  <div class="landing-wrapper">
+
+    <!-- Top nav -->
+    <nav class="landing-nav">
+      <span class="nav-logo">&#x25C6; LLM Interface</span>
+      <a href="login.html" class="nav-link">Sign in</a>
+    </nav>
+
+    <!-- Hero -->
+    <main class="landing-hero">
+      <div class="hero-tag">ECE 452 &mdash; Group 8</div>
+      <h1 class="hero-title">
+        Talk to a<br />
+        <em>large language</em><br />
+        model.
+      </h1>
+      <p class="hero-sub">
+        A clean interface for LLM inference.<br />
+        Sign in to save your conversations, or jump straight in as a guest.
+      </p>
+
+      <div class="hero-actions">
+        <a href="login.html" class="btn btn-primary">Sign in</a>
+        <a href="register.html" class="btn btn-secondary">Create account</a>
+        <a href="#" class="btn btn-ghost" id="guestBtn">Continue as guest</a>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+      <span>Rutgers University &mdash; Spring 2026</span>
+    </footer>
+
+  </div>
+
+  <script>
+    document.getElementById("guestBtn").addEventListener("click", async (e) => {
+      e.preventDefault();
+      try {
+        const res = await fetch("/api/auth/guest", { method: "POST" });
+        const data = await res.json();
+        if (data.success) {
+          window.location.href = "chat-guest.html";
+        } else {
+          alert("Could not start guest session. Please try again.");
+        }
+      } catch (err) {
+        alert("Server error. Is the backend running?");
+      }
+    });
+  </script>
+
+</body>
+</html>
