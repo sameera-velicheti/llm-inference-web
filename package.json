@@ -4,7 +4,8 @@
   "description": "A web interface for large language model inference with authentication, guest access, and a modular backend architecture.",
   "main": "index.js",
   "scripts": {
-    "test": "npx jasmine --config=backend/spec/support/jasmine.json"
+    "test": "npx jasmine --config=backend/spec/support/jasmine.json",
+    "test:acceptance": "cucumber-js testing/features/**/*.feature --require testing/step-definitions/*.js"
   },
   "repository": {
     "type": "git",
@@ -25,5 +26,8 @@
     "express": "^5.2.1",
     "express-session": "^1.19.0",
     "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@cucumber/cucumber": "^11.3.0"
   }
 }
