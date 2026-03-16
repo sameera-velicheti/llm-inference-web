@@ -1,0 +1,23 @@
+const puppeteer = require("puppeteer");
+
+(async () => {
+  const browser = await puppeteer.launch({ headless: false, slowMo: 50 });
+  const page = await browser.newPage();
+
+  try {
+    console.log("Starting Login Test...");
+    await page.goto("http://localhost:3000/login.html");
+
+    await page.type("#email", "testuser@example.com");
+    await page.type("#password", "password123");
+
+    await page.click("#submitBtn");
+    await page.waitForNavigation({ timeout: 5000 });
+    console.log("Login Test Passed: navigated to chat-user.html");
+
+  } catch (err) {
+    console.error("Login Test Failed:", err);
+  } finally {
+    await browser.close();
+  }
+})();
