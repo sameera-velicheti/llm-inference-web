@@ -3,32 +3,44 @@ const { v4: uuidv4 } = require("uuid");
 const userModel = require("../models/userModel");
 const authView = require("../views/authView");
 
-// Register a new user 
+// Register a new user
 async function register(req, res) {
   try {
-    const { email, password } = req.body;  // Get email and password from request
+    const { username, email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json(authView.errorResponse("Email and password are required"));
+    if (!username || !email || !password) {
+      return res.status(400).json(authView.errorResponse("Username, email, and password are required"));
     }
 
-    // Check if user already exists in database
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json(authView.errorResponse("Please enter a valid email address"));
+    }
+
+    // Check if username is already taken
+    const existingUsername = userModel.findUserByUsername(username);
+    if (existingUsername) {
+      return res.status(400).json(authView.errorResponse("Username is already taken"));
+    }
+
+    // Check if email is already registered
     const existingUser = userModel.findUserByEmail(email);
     if (existingUser) {
       return res.status(400).json(authView.errorResponse("User already exists"));
     }
 
-    // Hash the password for security before saving it 
+    // Hash the password before saving
     const passwordHash = await bcrypt.hash(password, 10);
-   
-   // Create the new user in the database
-    const user = userModel.createUser(email, passwordHash);
 
-    // Log the new session, and save the user so they stay logged in
-    req.session.user = user;
+    // Create the new user
+    const user = userModel.createUser(username, email, passwordHash);
+
+    // Save user to session so they are logged in immediately
+    req.session.user = { id: user.id, username: user.username, email: user.email };
 
     return res.status(201).json(
-      authView.successResponse("Account created successfully", { user })
+      authView.successResponse("Account created successfully", { user: req.session.user })
     );
   } catch (error) {
     return res.status(500).json(authView.errorResponse("Server error"));
@@ -54,19 +66,18 @@ async function login(req, res) {
       return res.status(401).json(authView.errorResponse("Invalid credentials"));
     }
 
-    req.session.user = { id: user.id, email: user.email };
+    // Store username, email, and id in session
+    req.session.user = { id: user.id, username: user.username, email: user.email };
 
     return res.status(200).json(
-      authView.successResponse("Login successful", {
-        user: { id: user.id, email: user.email }
-      })
+      authView.successResponse("Login successful", { user: req.session.user })
     );
   } catch (error) {
     return res.status(500).json(authView.errorResponse("Server error"));
   }
 }
 
-// Log out of curren user 
+// Log out of current session
 function logout(req, res) {
   req.session.destroy(() => {
     return res.status(200).json(authView.successResponse("Logout successful"));
@@ -76,10 +87,7 @@ function logout(req, res) {
 // Create a guest session
 function guest(req, res) {
   try {
-    // Log guest session in database
     userModel.logSession(null, true);
-
-    // Mark and save guest session
     req.session.guest = true;
 
     return res.status(200).json(
@@ -90,10 +98,10 @@ function guest(req, res) {
   }
 }
 
-// Password reset process
+// Initiate password reset — generate and return a reset token
 function forgotPassword(req, res) {
   try {
-    const { email } = req.body; // Get email from request 
+    const { email } = req.body;
 
     if (!email) {
       return res.status(400).json(authView.errorResponse("Email is required"));
@@ -104,11 +112,9 @@ function forgotPassword(req, res) {
       return res.status(404).json(authView.errorResponse("User not found"));
     }
 
-    // Create unique reset token
     const token = uuidv4();
     userModel.saveResetToken(user.id, token);
 
-    // Return the token
     return res.status(200).json(
       authView.successResponse("Password reset token created", { token })
     );
@@ -117,7 +123,7 @@ function forgotPassword(req, res) {
   }
 }
 
-// Reset the password using the token 
+// Reset password using a valid token
 async function resetPassword(req, res) {
   try {
     const { token, newPassword } = req.body;
@@ -141,18 +147,15 @@ async function resetPassword(req, res) {
   }
 }
 
-// Mock CAS login for testing purposes 
+// Mock CAS login for testing purposes
 function casLogin(req, res) {
   try {
-    // Get netid 
     const { netid } = req.query;
 
-    // Ensure netid exists 
     if (!netid) {
       return res.status(400).json(authView.errorResponse("NetID is required"));
     }
 
-     // Save CAS user 
     req.session.casUser = { netid };
 
     return res.status(200).json(
@@ -163,7 +166,7 @@ function casLogin(req, res) {
   }
 }
 
-// Return current session info (User, guest, CAS user)
+// Return current session info
 function me(req, res) {
   return res.status(200).json(
     authView.successResponse("Current session retrieved", {
@@ -174,7 +177,6 @@ function me(req, res) {
   );
 }
 
-// Export controller functions for use in routes 
 module.exports = {
   register,
   login,
