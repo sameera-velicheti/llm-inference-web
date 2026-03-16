@@ -6,7 +6,7 @@
   "scripts": {
     "test": "npx jasmine --config=backend/spec/support/jasmine.json",
     "test:acceptance": "cucumber-js testing/features/**/*.feature --require testing/step-definitions/*.js"
-    "test:browser": "node testing/puppeteer/login.test.js
+    "test:browser": "node testing/puppeteer/login.test.js"
   },
   "repository": {
     "type": "git",
