@@ -1,5 +1,5 @@
-# to test, make sure server is running, open a second terminal, go to approprite file path, then do 
-# node testing/puppeteer/puppeteer-register.js
+// to test, make sure server is running, open a second terminal, go to approprite file path, then do 
+// node testing/puppeteer/puppeteer-register-known.js
 const puppeteer = require("puppeteer");
 
 (async () => {
@@ -25,3 +25,5 @@ const puppeteer = require("puppeteer");
     await browser.close();
   }
 })();
+
+//this test should always fail because we are testing with a user that is in the system. a registered user cannot register with the same credentials
