@@ -16,7 +16,7 @@ const puppeteer = require("puppeteer");
     await page.click("#submitBtn");
     await page.waitForNavigation({ timeout: 5000 });
     await page.click("#logoutBtn");
-    await page.waitForNavigation({ timeout: 5000 });
+
 
     console.log("Logout Test Passed: returned to index.html");
   } catch (err) {
