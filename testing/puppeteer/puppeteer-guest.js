@@ -18,9 +18,9 @@ const puppeteer = require("puppeteer");
   // Check if we are on chat-guest.html
   const url = page.url();
   if (!url.includes("chat-guest.html")) {
-    console.error("❌ Did not navigate to chat-guest.html");
+    console.error("Did not navigate to chat-guest.html");
   } else {
-    console.log("✅ Successfully navigated to chat-guest.html");
+    console.log("Successfully navigated to chat-guest.html");
   }
 
   // Optional: check that guest welcome message exists
