@@ -5,18 +5,15 @@ const puppeteer = require("puppeteer");
   const page = await browser.newPage();
 
   try {
-    console.log("Starting Login Test...");
-    await page.goto("http://localhost:3000/login.html");
+    console.log("Starting Guest Test...");
+    await page.goto("http://localhost:3000/index.html");
 
-    await page.type("#email", "testuser@example.com");
-    await page.type("#password", "password123");
-
-    await page.click("#submitBtn");
+    await page.click("#guestBtn");
     await page.waitForNavigation({ timeout: 5000 });
-    console.log("Login Test Passed: navigated to chat-user.html");
 
+    console.log("Guest Test Passed: navigated to chat-guest.html");
   } catch (err) {
-    console.error("Login Test Failed:", err);
+    console.error("Guest Test Failed:", err);
   } finally {
     await browser.close();
   }
