@@ -27,5 +27,17 @@ npm install
 //follow this order to see all outcomes
 
 node testing/puppeteer/register.js
+node testing/puppeteer/login.js
+node testing/puppeteer/logout.js
+node testing/puppeteer/forgot-password.js
+node testing/puppateer/reset-password.js
+
+//at this point, trying to log back in with login.js will not work, as it will try to use the old password
+node testing/puppeteer/login.js
+
+//trying to register again as well won't work because credentials already exist in the database
+node testing/puppeteer/register.js
+
+//
 
 ```
