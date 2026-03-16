@@ -20,7 +20,7 @@ const puppeteer = require("puppeteer");
     console.log("Register Test Passed: navigated to chat-user.html");
 
   } catch (err) {
-    console.error("Register Test Failed:", err);
+    console.error("Registration Failed or Timed Out!:", err);
   } finally {
     await browser.close();
   }
