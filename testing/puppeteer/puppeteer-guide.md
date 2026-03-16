@@ -26,5 +26,6 @@ npm install
 //but assuming we just opened the server and there are no registered accounts
 //follow this order to see all outcomes
 
-node testing/puppeteer/register-
+node testing/puppeteer/register.js
+
 ```
