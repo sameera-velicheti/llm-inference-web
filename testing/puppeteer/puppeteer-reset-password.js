@@ -16,7 +16,7 @@ const puppeteer = require("puppeteer");
     // Step 2: reset password
     const token = await page.$eval("#tokenDisplay", el => el.textContent.trim());
 
-    await page.type("#tokenInput", token);
+    
     await page.type("#newPassword", "newpassword123");
     await page.type("#confirmNewPassword", "newpassword123");
 
