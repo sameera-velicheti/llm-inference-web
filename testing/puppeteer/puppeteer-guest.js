@@ -1,3 +1,5 @@
+# to test, make sure server is running, open a second terminal, go to approprite file path, then do 
+# node testing/puppeteer/puppeteer-guest.js
 const puppeteer = require("puppeteer");
 
 (async () => {
