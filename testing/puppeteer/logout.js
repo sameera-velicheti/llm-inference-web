@@ -1,4 +1,5 @@
-//
+// to test, make sure server is running, open a second terminal, go to approprite file path, then do 
+// node testing/puppeteer/puppeteer-logout.js
 const puppeteer = require("puppeteer");
 
 (async () => {
@@ -24,3 +25,5 @@ const puppeteer = require("puppeteer");
     await browser.close();
   }
 })();
+
+//this test logins first, then logs out. this will fail if testuser@example.com isnt registered within the session
