@@ -3,16 +3,23 @@ To properly test using puppeteer:
 Open Terminal 1:
 
 rmdir /s llm-inference-web //this is to remove any old cloned files, omit it if cloned files are not present
+
 git clone https://github.com/sameera-velicheti/llm-inference-web.git
+
 cd llm-inference-web
+
 npm install
+
 node backend/server.js
 
+
 //should say "Server running on http://localhost:3000"
+
 
 Open Terminal 2: //at the top of cmd, there is a + and down arrow, open another cmd terminal
 
 cd llm-inference-web
+
 npm install
 
 //now we can run the specific tests, but assuming we just opened the server and there are no registered accounts, follow this order to see all outcomes
