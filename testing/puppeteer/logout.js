@@ -26,4 +26,4 @@ const puppeteer = require("puppeteer");
   }
 })();
 
-//this test logins first, then logs out. this will fail if testuser@example.com isnt registered within the session
+//this test logins first, then logs out. this will fail if testuser@example.com isnt registered within the session, or if testuser@example has run the test "reset-password.js"
