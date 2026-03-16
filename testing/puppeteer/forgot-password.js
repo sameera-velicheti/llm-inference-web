@@ -21,3 +21,5 @@ const puppeteer = require("puppeteer");
     await browser.close();
   }
 })();
+
+//purpose of this is to make sure that getting to the reset password page works, and that a token is generated. doesnt finish the entire password resetting process, that is for reset-password.js
