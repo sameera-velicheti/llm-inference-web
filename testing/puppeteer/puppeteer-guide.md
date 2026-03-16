@@ -22,7 +22,9 @@ cd llm-inference-web
 
 npm install
 
-//now we can run the specific tests, but assuming we just opened the server and there are no registered accounts, follow this order to see all outcomes
+//now we can run the specific tests
+//but assuming we just opened the server and there are no registered accounts
+//follow this order to see all outcomes
 
 node testing/puppeteer/register-
 ```
