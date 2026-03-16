@@ -1,5 +1,5 @@
 // to test, make sure server is running, open a second terminal, go to approprite file path, then do 
-// node testing/puppeteer/puppeteer-register-known.js
+// node testing/puppeteer/puppeteer-register-existing.js
 const puppeteer = require("puppeteer");
 
 (async () => {
