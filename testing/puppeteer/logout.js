@@ -1,3 +1,4 @@
+//
 const puppeteer = require("puppeteer");
 
 (async () => {
@@ -12,7 +13,7 @@ const puppeteer = require("puppeteer");
     await page.type("#password", "password123");
 
     await page.click("#submitBtn");
-    
+    await page.waitForNavigation({ timeout: 5000 });
     await page.click("#logoutBtn");
     await page.waitForNavigation({ timeout: 5000 });
 
