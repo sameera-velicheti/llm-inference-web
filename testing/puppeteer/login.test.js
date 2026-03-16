@@ -14,7 +14,8 @@ const puppeteer = require("puppeteer");
   await page.type("#email", "test@example.com");
   await page.type("#password", "Password123!");
 
-  await page.click("button[type=submit]");
+  await page.waitForSelector("#submitBtn", { visible: true });
+  await page.click("#submitBtn");
 
   // wait for redirect
   await page.waitForNavigation();
