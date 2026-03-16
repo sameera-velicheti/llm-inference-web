@@ -23,3 +23,5 @@ const puppeteer = require("puppeteer");
     await browser.close();
   }
 })();
+
+//this will only work if credentials used is already an account that was registered previously
