@@ -29,6 +29,7 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
-    "@cucumber/cucumber": "^11.3.0"
+    "@cucumber/cucumber": "^11.3.0",
+    "puppeteer": "^24.39.1"
   }
 }
