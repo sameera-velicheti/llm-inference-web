@@ -26,4 +26,4 @@ const puppeteer = require("puppeteer");
   }
 })();
 
-//this test should always fail because we are testing with a user that is in the system. a registered user cannot register with the same credentials
+//this test should always pass when the server has just opened and it is run for the first time. Any attempts to run this test will result in an "existing user" error and cause a timeout
