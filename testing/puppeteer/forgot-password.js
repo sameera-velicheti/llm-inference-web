@@ -1,5 +1,5 @@
 // to test, make sure server is running, open a second terminal, go to approprite file path, then do 
-// node testing/puppeteer/puppeteer-forgot-password.js
+// node testing/puppeteer/forgot-password.js
 const puppeteer = require("puppeteer");
 
 (async () => {
