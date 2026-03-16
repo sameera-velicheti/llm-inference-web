@@ -3,7 +3,6 @@
 
 const userModel = require("../src/models/userModel");
 const bcrypt    = require("bcrypt");
-const uuid      = require("uuid");
 
 // Helper: builds a mock Express request
 function mockReq({ body = {}, session = {}, query = {} } = {}) {
@@ -50,6 +49,15 @@ describe("authController", () => {
 
     it("should return 400 if password is missing", async () => {
       const req = mockReq({ body: { username: "alice", email: "a@b.com" } });
+      const res = mockRes();
+
+      await authController.register(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    it("should return 400 if email format is invalid", async () => {
+      const req = mockReq({ body: { username: "alice", email: "notanemail", password: "Password1!" } });
       const res = mockRes();
 
       await authController.register(req, res);
