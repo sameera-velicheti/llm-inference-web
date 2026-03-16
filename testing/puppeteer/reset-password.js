@@ -1,5 +1,6 @@
 // to test, make sure server is running, open a second terminal, go to approprite file path, then do 
 // node testing/puppeteer/reset-password.js
+// NOTE: AFTER RUNNING THIS TEST, THE USER testuser@example.com will have a different password. any future attempts to login will be invalid
 const puppeteer = require("puppeteer");
 
 (async () => {
