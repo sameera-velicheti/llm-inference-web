@@ -3,9 +3,13 @@
 const puppeteer = require("puppeteer");
 
 (async () => {
-  const browser = await puppeteer.launch({ headless: false });
+  const browser = await puppeteer.launch({ headless: false, args: ["--start-maximized"], defaultViewport: null });
   const page = await browser.newPage();
 
+  await page.setViewport({
+  width: 1920,
+  height: 1080
+});
   // Go to homepage
   await page.goto("http://localhost:3000/index.html");
 
