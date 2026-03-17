@@ -3,9 +3,13 @@
 const puppeteer = require("puppeteer");
 
 (async () => {
-  const browser = await puppeteer.launch({ headless: false, slowMo: 50 });
+  const browser = await puppeteer.launch({ headless: false, slowMo: 50, args: ["--start-maximized"], defaultViewport: null });
   const page = await browser.newPage();
 
+  await page.setViewport({
+  width: 1920,
+  height: 1080
+});
   try {
     console.log("Starting Register Test...");
     await page.goto("http://localhost:3000/register.html");
