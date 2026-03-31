@@ -4,3 +4,5 @@ Date/Time: 3/30 - 13:58 - Pull Request: N/A - Change: Created Changelog
 Date/Time: 3/30 - 14:09 - Pull Request: mtb-arch-patch-2 - Change: Created chatHistory file
 Date/Time: 3/30 - 14:13 - Pull Request: mtb-arch-patch-3 - Change: Copy-pasted userThingy into chatHistory
 Data/Time: 3/31 - 13:17 - Pull Request: chatController.js - Change: Created Controller file
+Data/Time: 3/31 - 14:30 - Pull Request: chatController.js - Change: Created chatModel file
+Data/Time: 3/31 - 14:31 - Pull Request: chatController.js - Change: Created chatRoute file
