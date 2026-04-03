@@ -6,3 +6,4 @@ Date/Time: 3/30 - 14:13 - Pull Request: mtb-arch-patch-3 - Change: Copy-pasted u
 Data/Time: 3/31 - 13:17 - Pull Request: chatController.js - Change: Created Controller file
 Data/Time: 3/31 - 14:30 - Pull Request: chatController.js - Change: Created chatModel file
 Data/Time: 3/31 - 14:31 - Pull Request: chatController.js - Change: Created chatRoute file
+Data/Time: 4/2 - 23:30 - Pull Request: main.js - Change: Add sidebar and main chat area to chat-user.html
