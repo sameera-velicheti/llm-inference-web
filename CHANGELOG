@@ -16,3 +16,4 @@ Data/Time: 4/3 - 16:43 - Pull Request: main.js - Change: Add chat-search styles 
 Data/Time: 4/3 - 16:54 - Pull Request: main.js - Change: Add search functionality for chat list to chat-user.html
 Data/Time: 4/3 - 17:08 - Pull Request: main.js - Change: Add searchChats route to chatRoute 
 Data/Time: 4/3 - 17:13 - Pull Request: main.js - Change: Add searchChats function to Controller
+Data/Time: 4/3 - 17:19 - Pull Request: main.js - Change: Implement searchChats function for chat search in chatModel.js
