@@ -170,6 +170,34 @@
   });
 }
     loadChats();
+
+    // ── Search Chats ─────────────────────────────────────────
+    const searchInput = document.getElementById("chatSearch");
+
+searchInput.addEventListener("input", async () => {
+  const query = searchInput.value.trim();
+
+  if (!query) {
+    loadChats(); // reload all chats
+    return;
+  }
+  
+  const res = await fetch(`/api/chats/search?q=${encodeURIComponent(query)}`);
+  const chats = await res.json();
+
+  const chatList = document.getElementById("chatList");
+  chatList.innerHTML = "";
+
+  chats.forEach(chat => {
+    const item = document.createElement("div");
+    item.className = "chat-item";
+    item.textContent = chat.title || "New Chat";
+
+    item.onclick = () => loadMessages(chat.id);
+
+    chatList.appendChild(item);
+  });
+});
     
   </script>
   </div>
