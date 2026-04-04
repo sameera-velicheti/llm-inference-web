@@ -127,6 +127,44 @@
       appendMessage("assistant", "LLM inference is not yet connected. This is a placeholder response.");
       sendBtn.disabled = false;
     }
+
+    // ── Fetch Chat History ─────────────────────────────────────────
+    async function loadChats() {
+  try {
+    const res = await fetch("/api/chats");
+    const chats = await res.json();
+
+    const chatList = document.getElementById("chatList");
+    chatList.innerHTML = "";
+
+    chats.forEach(chat => {
+      const item = document.createElement("div");
+      item.className = "chat-item";
+      item.textContent = chat.title || "New Chat";
+
+      item.onclick = () => loadMessages(chat.id);
+
+      chatList.appendChild(item);
+    });
+  } catch (err) {
+    console.error("Failed to load chats");
+  }
+}
+
+    // ── Load Chats ─────────────────────────────────────────
+    async function loadMessages(chatId) {
+  const res = await fetch(`/api/messages/${chatId}`);
+  const messages = await res.json();
+
+  const container = document.getElementById("chatMessages");
+  container.innerHTML = "";
+
+  messages.forEach(m => {
+    appendMessage(m.sender, m.message);
+  });
+}
+    loadChats();
+    
   </script>
   </div>
 </div>
