@@ -25,3 +25,30 @@ exports.getMessages = (chatId) => {
         );
     });
 };
+
+exports.searchChats = (userId, query) => {
+  return new Promise((resolve, reject) => {
+
+    const sql = `
+      SELECT DISTINCT chats.id, chats.title
+      FROM chats
+      LEFT JOIN messages ON messages.chat_id = chats.id
+      WHERE chats.user_id = ?
+      AND (
+        chats.title LIKE ?
+        OR messages.message LIKE ?
+      )
+      ORDER BY chats.created_at DESC
+    `;
+
+    db.all(
+      sql,
+      [userId, `%${query}%`, `%${query}%`],
+      (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows);
+      }
+    );
+
+  });
+};
