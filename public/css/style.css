@@ -297,6 +297,22 @@ input:focus { border-color: var(--text); }
   overflow-y: auto;
 }
 
+.chat-search {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  margin-bottom: 0.8rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  background: var(--bg);
+  outline: none;
+}
+
+.chat-search:focus {
+  border-color: var(--text);
+}
+
 .sidebar-title {
   font-size: 0.85rem;
   font-weight: 500;
