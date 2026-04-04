@@ -9,3 +9,4 @@ Data/Time: 3/31 - 14:31 - Pull Request: chatController.js - Change: Created chat
 Data/Time: 4/2 - 23:30 - Pull Request: main.js - Change: Add sidebar and main chat area to chat-user.html
 Data/Time: 4/3 - 13:32 - Pull Request: main.js - Change: Implement chat layout and sidebar styles in style.css 
 Data/Time: 4/3 - 13:48 - Pull Request: main.js - Change: Implement chat history loading functionality in chat-user.html
+Data/Time: 4/3 - 14:03 - Pull Request: main.js - Change: Add chat routes to Express app to app.js
