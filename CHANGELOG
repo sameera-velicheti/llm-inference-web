@@ -12,3 +12,4 @@ Data/Time: 4/3 - 13:48 - Pull Request: main.js - Change: Implement chat history 
 Data/Time: 4/3 - 14:03 - Pull Request: main.js - Change: Add chat routes to Express app to app.js
 Data/Time: 4/3 - 14:13 - Pull Request: main.js - Change: Add chats table to database schema
 Data/Time: 4/3 - 16:38 - Pull Request: main.js - Change: Add search input to chat sidebar to chat-user.html
+Data/Time: 4/3 - 16:43 - Pull Request: main.js - Change: Add chat-search styles to style.css
