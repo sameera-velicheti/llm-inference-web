@@ -30,7 +30,22 @@ db.exec(`
     user_id INTEGER,
     is_guest INTEGER DEFAULT 0,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+  
+  CREATE TABLE IF NOT EXISTS chats (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER,
+  title TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
-`);
+  
+  CREATE TABLE IF NOT EXISTS messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  chat_id INTEGER,
+  sender TEXT,
+  message TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+);
 
 module.exports = db;
