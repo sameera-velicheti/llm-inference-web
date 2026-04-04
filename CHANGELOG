@@ -7,3 +7,4 @@ Data/Time: 3/31 - 13:17 - Pull Request: chatController.js - Change: Created Cont
 Data/Time: 3/31 - 14:30 - Pull Request: chatController.js - Change: Created chatModel file
 Data/Time: 3/31 - 14:31 - Pull Request: chatController.js - Change: Created chatRoute file
 Data/Time: 4/2 - 23:30 - Pull Request: main.js - Change: Add sidebar and main chat area to chat-user.html
+Data/Time: 4/3 - 13:32 - Pull Request: main.js - Change: Implement chat layout and sidebar styles to style.css 
