@@ -9,17 +9,17 @@ const db = new Database(dbPath);
 // SQL commands to create tables
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT, -- unique user id
-    username TEXT UNIQUE NOT NULL,        -- unique display name
-    email TEXT UNIQUE NOT NULL,           -- user email, must be unique
-    password_hash TEXT NOT NULL,          -- hashed password for security
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
   );
 
   CREATE TABLE IF NOT EXISTS password_reset_tokens (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,            -- connects token to user
-    token TEXT NOT NULL,                 -- reset token string
+    user_id INTEGER NOT NULL,
+    token TEXT NOT NULL,
     used INTEGER DEFAULT 0,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(user_id) REFERENCES users(id)
@@ -30,22 +30,22 @@ db.exec(`
     user_id INTEGER,
     is_guest INTEGER DEFAULT 0,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-  
+  );
+
   CREATE TABLE IF NOT EXISTS chats (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER,
-  title TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    title TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
-  
+
   CREATE TABLE IF NOT EXISTS messages (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  chat_id INTEGER,
-  sender TEXT,
-  message TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    chat_id INTEGER,
+    sender TEXT,
+    message TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
-);
+`);
 
 module.exports = db;

@@ -71,3 +71,31 @@ When('the user logs out', function () {
 Then('the session should be destroyed successfully', function () {
   console.log('Session destroyed successfully');
 });
+
+Given('the user is logged in on the authenticated chat page', function () {
+  console.log('User is logged in and on the authenticated chat page');
+});
+
+When('the user opens the authenticated chat page', function () {
+  console.log('User opens the authenticated chat page');
+});
+
+Then("the user's previous chats should be displayed", function () {
+  console.log("User's previous chats are displayed");
+});
+
+When('the user selects a previous chat', function () {
+  console.log('User selects a previous chat');
+});
+
+Then('the messages from that chat should be displayed', function () {
+  console.log('Messages from the selected chat are displayed');
+});
+
+When('the user enters a keyword into the chat search bar', function () {
+  console.log('User enters a keyword into the chat search bar');
+});
+
+Then('matching chats should be displayed', function () {
+  console.log('Matching chats are displayed');
+});
