@@ -1,12 +1,5 @@
 const db = require("../config/db");
 
-exports.addMessage = (chatId, role, message) => {
-  return db.prepare(`
-    INSERT INTO messages (chat_id, role, message)
-    VALUES (?, ?, ?)
-  `).run(chatId, role, message);
-};
-
 exports.getChatsByUser = (userId) => {
   const stmt = db.prepare(`
     SELECT * FROM chats 
