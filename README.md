@@ -178,6 +178,9 @@ Base path: `/api/auth`
 | GET | /api/auth/me | Retrieve current session information | Yes |
 
 ### Chat Routes
+Base path: `/api`
+
+| Method | Endpoint | Description | Auth Required |
 |---|---|---|---|
 | GET | /api/chats | Get all chats for user | YES |
 | GET | /api/chats/search?q= | Search chats | YES |
