@@ -1,14 +1,5 @@
 const db = require("../config/db");
 
-exports.createChat = (userId, title) => {
-  const result = db.prepare(`
-    INSERT INTO chats (user_id, title)
-    VALUES (?, ?)
-  `).run(userId, title);
-
-  return result.lastInsertRowid;
-};
-
 exports.addMessage = (chatId, role, message) => {
   return db.prepare(`
     INSERT INTO messages (chat_id, role, message)
@@ -17,54 +8,56 @@ exports.addMessage = (chatId, role, message) => {
 };
 
 exports.getChatsByUser = (userId) => {
-    return new Promise((resolve, reject) => {
-        db.all(
-            "SELECT * FROM chats WHERE user_id = ? ORDER BY created_at DESC",
-            [userId],
-            (err, rows) => {
-                if (err) reject(err);
-                else resolve(rows);
-            }
-        );
-    });
+  const stmt = db.prepare(`
+    SELECT * FROM chats 
+    WHERE user_id = ? 
+    ORDER BY created_at DESC
+  `);
+
+  return stmt.all(userId);
 };
 
 exports.getMessages = (chatId) => {
-    return new Promise((resolve, reject) => {
-        db.all(
-            "SELECT * FROM messages WHERE chat_id = ?",
-            [chatId],
-            (err, rows) => {
-                if (err) reject(err);
-                else resolve(rows);
-            }
-        );
-    });
+  const stmt = db.prepare(`
+    SELECT * FROM messages 
+    WHERE chat_id = ? 
+    ORDER BY created_at ASC
+  `);
+
+  return stmt.all(chatId);
 };
 
 exports.searchChats = (userId, query) => {
-  return new Promise((resolve, reject) => {
-
-    const sql = `
-      SELECT DISTINCT chats.id, chats.title
-      FROM chats
-      LEFT JOIN messages ON messages.chat_id = chats.id
-      WHERE chats.user_id = ?
+  const stmt = db.prepare(`
+    SELECT DISTINCT chats.*
+    FROM chats
+    LEFT JOIN messages ON messages.chat_id = chats.id
+    WHERE chats.user_id = ?
       AND (
         chats.title LIKE ?
         OR messages.message LIKE ?
       )
-      ORDER BY chats.created_at DESC
-    `;
+    ORDER BY chats.created_at DESC
+  `);
 
-    db.all(
-      sql,
-      [userId, `%${query}%`, `%${query}%`],
-      (err, rows) => {
-        if (err) reject(err);
-        else resolve(rows);
-      }
-    );
+  return stmt.all(userId, `%${query}%`, `%${query}%`);
+};
 
-  });
+exports.createChat = (userId, title) => {
+  const stmt = db.prepare(`
+    INSERT INTO chats (user_id, title)
+    VALUES (?, ?)
+  `);
+
+  const result = stmt.run(userId, title);
+  return result.lastInsertRowid;
+};
+
+exports.addMessage = (chatId, role, message) => {
+  const stmt = db.prepare(`
+    INSERT INTO messages (chat_id, role, message)
+    VALUES (?, ?, ?)
+  `);
+
+  return stmt.run(chatId, role, message);
 };
