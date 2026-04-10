@@ -55,6 +55,7 @@
 
   <script>
     // ── Session guard ────────────────────────────────────────
+    let currentChatId = null; 
     (async () => {
       try {
         const res  = await fetch("/api/auth/me");
@@ -119,20 +120,67 @@
 
     // ── Send message ─────────────────────────────────────────
     async function sendMessage() {
-      const text    = chatInput.value.trim();
-      const sendBtn = document.getElementById("sendBtn");
+  const text = chatInput.value.trim();
+  const sendBtn = document.getElementById("sendBtn");
 
-      if (!text) return;
+  if (!text) return;
 
-      appendMessage("user", text);
-      chatInput.value        = "";
-      chatInput.style.height = "auto";
-      sendBtn.disabled       = true;
+  // Show user message immediately
+  appendMessage("user", text);
 
-      // Placeholder response — LLM integration comes in a future iteration
-      appendMessage("assistant", "LLM inference is not yet connected. This is a placeholder response.");
-      sendBtn.disabled = false;
+  chatInput.value = "";
+  chatInput.style.height = "auto";
+  sendBtn.disabled = true;
+
+  try {
+    // Create chat if it doesn't exist yet
+    if (!currentChatId) {
+      const res = await fetch("/api/chats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: text.substring(0, 25)
+        })
+      });
+
+      const data = await res.json();
+      currentChatId = data.chatId;
+
+      loadChats(); // refresh sidebar 
     }
+
+    // Save user message
+    await fetch(`/api/chats/${currentChatId}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        role: "user",
+        message: text
+      })
+    });
+
+    // Fake assistant reply (for now)
+    const reply = "LLM inference is not yet connected.";
+
+    appendMessage("assistant", reply);
+
+    // Save assistant message
+    await fetch(`/api/chats/${currentChatId}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        role: "assistant",
+        message: reply
+      })
+    });
+
+  } catch (err) {
+    console.error(err);
+    appendMessage("assistant", "Error sending message.");
+  }
+
+  sendBtn.disabled = false;
+}
 
     // ── Fetch Chat History ─────────────────────────────────────────
     async function loadChats() {
@@ -159,17 +207,18 @@
 
     // ── Load Chats ─────────────────────────────────────────
     async function loadMessages(chatId) {
-  const res = await fetch(`/api/messages/${chatId}`);
+      currentChatId = chatId;
+      
+  const res = await fetch(`/api/chats/${chatId}/messages`);
   const messages = await res.json();
 
   const container = document.getElementById("chatMessages");
   container.innerHTML = "";
 
   messages.forEach(m => {
-    appendMessage(m.sender, m.message);
+    appendMessage(m.role, m.message);
   });
 }
-    loadChats();
 
     // ── Search Chats ─────────────────────────────────────────
     const searchInput = document.getElementById("chatSearch");
