@@ -51,3 +51,16 @@ exports.addMessage = async (req, res) => {
     res.status(500).json({ error: "Failed to save message" });
   }
 };
+
+exports.getMessages = async (req, res) => {
+  try {
+    const { chatId } = req.params;
+
+    const messages = chatModel.getMessages(chatId);
+
+    res.json(messages);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to load messages" });
+  }
+};
