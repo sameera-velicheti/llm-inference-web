@@ -21,7 +21,7 @@ A full-stack web application providing a user interface for large language model
 
 ## Project Overview
 
-This project is developed across three iterations as part of ECE 452. The application allows users to interact with a large language model through a clean web interface. Authentication is handled locally with support for registered accounts and guest sessions.
+This project is developed across three iterations as part of ECE 452. The application allows users to interact with a large language model through a clean web interface. Authentication is handled locally with support for registered accounts and guest sessions. The application allows users to register, log in, manage sessions, and interact with a chat interface that stores conversation history.
 
 **Team roles:**
 | Subteam | Responsibilities |
@@ -69,12 +69,15 @@ project-root/
 │   │   │   └── db.js               # SQLite connection and table initialization
 │   │   ├── controllers/
 │   │   │   └── authController.js   # Business logic for all authentication routes
+|   |   |   └── chatController.js   # API logic for chat-related services
 │   │   ├── middleware/
 │   │   │   └── authMiddleware.js   # requireAuth session guard
 │   │   ├── models/
 │   │   │   └── userModel.js        # Database query functions
+|   |   |   └── chatModel.js        # chat-related database operations
 │   │   ├── routes/
 │   │   │   └── authRoutes.js       # Route definitions
+|   |   |   └── chatRoute.js        # Defines all the chat-related endpoints
 │   │   ├── views/
 │   │   │   └── authView.js         # Standardized JSON response formatters
 │   │   ├── app.js                  # Express app configuration
@@ -85,7 +88,8 @@ project-root/
 │       ├── authViewSpec.js         # Unit tests for response formatters
 │       ├── authMiddlewareSpec.js   # Unit tests for session middleware
 │       ├── userModelSpec.js        # Unit tests for database model layer
-│       └── authControllerSpec.js  # Unit tests for controller logic
+│       └── authControllerSpec.js   # Unit tests for controller logic
+|       └── chatHistorySpec.js      # Unit tests for chat-related behavior
 ├── database/
 │   └── app.db                      # SQLite database file
 ├── public/
@@ -140,6 +144,7 @@ npx jasmine --config=backend/spec/support/jasmine.json --filter="authController"
 npx jasmine --config=backend/spec/support/jasmine.json --filter="authView"
 npx jasmine --config=backend/spec/support/jasmine.json --filter="authMiddleware"
 npx jasmine --config=backend/spec/support/jasmine.json --filter="userModel"
+npx jasmine --config=backend/spec/support/jasmine.json --filter="chatHistory"
 ```
 
 ---
@@ -172,6 +177,14 @@ Base path: `/api/auth`
 | POST | /api/auth/reset-password | Reset password using a token | No |
 | GET | /api/auth/me | Retrieve current session information | Yes |
 
+### Chat Routes
+|---|---|---|---|
+| GET | /api/chats | Get all chats for user | YES |
+| GET | /api/chats/search?q= | Search chats | YES |
+| GET | /api/chats/:chatId/messages | Get messages for chat | YES |
+| POST | /api/chats | Create new chat | YES |
+| POST | /api/chats/:chatId/messages | Add message | YES |
+
 ### Example Requests
 
 **Register**
@@ -199,6 +212,22 @@ POST /api/auth/reset-password
 { "token": "<reset-token>", "newPassword": "NewPassword123!" }
 ```
 
+**Create Chat**
+```
+POST /api/chats
+{ "title": "Hello world" }
+```
+
+**Send Message**
+```
+POST /api/chats/1/messages
+{ "role": "user", "message": "Hi" }
+```
+
+**Fetch History**
+```
+GET /api/chats/1/messages
+```
 ---
 
 ## Database Design
@@ -231,6 +260,23 @@ The SQLite database is located at `database/app.db` and is initialized automatic
 | is_guest | INTEGER | DEFAULT 0 | 0 = authenticated user, 1 = guest |
 | created_at | TEXT | DEFAULT CURRENT_TIMESTAMP | Session creation time |
 
+### `chats`
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| id | INTEGER | PRIMARY KEY, AUTOINCREMENT | Unique chat identifier |
+| user_id | INTEGER | NOT NULL | Chat user |
+| title | TEXT | | Chat name|
+| created_at | TEXT | DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(user_id), REFERENCES user(id) | Chat creation time |
+
+### `messages`
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| id | INTEGER | PRIMARY KEY, AUTOINCREMENT | Unique message identifier |
+| chat_id | INTEGER | NOT NULL | Associated chat |
+| role | TEXT | NOT NULL | Message sender |
+| message | TEXT | NOT NULL | Message content |
+| created_at | TEXT | DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(chat_id), REFERENCES chats(id) | Message creation time |
+
 ---
 
 ## Frontend Pages
@@ -258,7 +304,8 @@ Unit tests are located in `backend/spec/` and follow test-driven development (TD
 | authMiddleware | authMiddlewareSpec.js | 6 | Session guard logic |
 | userModel | userModelSpec.js | 20 | All database query functions including username lookup |
 | authController | authControllerSpec.js | 35 | All route business logic including username uniqueness and email format validation |
-| **Total** | | **70** | |
+| chatHistory | chatHistorySpec.js | 15 | Chat creation, message storage, retrieval, and search functionality |
+| **Total** | | **85** | |
 
 ### Acceptance Tests (Cucumber.js)
 Managed by the Testing team. See the Testing team's documentation for scenario definitions and step implementations.
@@ -281,6 +328,19 @@ To test the reset flow manually:
 
 Email delivery integration is planned for a future iteration.
 
+### Chat System (Iteration 2)
+
+The chat interface and backend were introduced in Iteration 2.
+
+Features include:
+- Creating new chats
+- Persisting messages in SQLite
+- Viewing chat history
+- Searching chats by title or message content
+- Dynamic sidebar with previous conversations
+
+The system is fully functional, but currently uses a placeholder response for the assistant.
+
 ### LLM Inference
 The chat interface is fully built and session-authenticated. The LLM inference call is not yet connected — the assistant response in the current iteration returns a placeholder string. LLM integration (via vLLM) is planned for a future iteration.
 
@@ -294,5 +354,5 @@ Sessions are managed server-side via `express-session`. The session secret is cu
 | Iteration | Focus | Status |
 |---|---|---|
 | Iteration 1 | Authentication, user accounts, frontend pages, unit tests | ✅ Complete |
-| Iteration 2 | TBD | 🔲 Upcoming |
+| Iteration 2 | Chat UI, chat history, message persistence, search functionality | ✅ Complete |
 | Iteration 3 | TBD | 🔲 Upcoming |
