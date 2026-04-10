@@ -43,7 +43,7 @@ exports.createChat = (userId, title) => {
   `);
 
   const result = stmt.run(userId, title);
-  return result.lastInsertRowid;
+  return { id: result.lastInsertRowid };
 };
 
 exports.addMessage = (chatId, role, message) => {
@@ -52,5 +52,6 @@ exports.addMessage = (chatId, role, message) => {
     VALUES (?, ?, ?)
   `);
 
-  return stmt.run(chatId, role, message);
+  const result = stmt.run(chatId, role, message);
+  return { id: result.lastInsertRowid };
 };
