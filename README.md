@@ -89,7 +89,8 @@ project-root/
 │       ├── authMiddlewareSpec.js   # Unit tests for session middleware
 │       ├── userModelSpec.js        # Unit tests for database model layer
 │       └── authControllerSpec.js   # Unit tests for controller logic
-|       └── chatHistorySpec.js      # Unit tests for chat-related behavior
+|       └── chatHistorySpec.js      # Unit tests for database model layer
+|       └── chatControllerSpec.js   # Unit tests for controller logic
 ├── database/
 │   └── app.db                      # SQLite database file
 ├── public/
@@ -145,6 +146,7 @@ npx jasmine --config=backend/spec/support/jasmine.json --filter="authView"
 npx jasmine --config=backend/spec/support/jasmine.json --filter="authMiddleware"
 npx jasmine --config=backend/spec/support/jasmine.json --filter="userModel"
 npx jasmine --config=backend/spec/support/jasmine.json --filter="chatHistory"
+npx jasmine --config=backend/spec/support/jasmine.json --filter="chatController"
 ```
 
 ---
@@ -308,7 +310,8 @@ Unit tests are located in `backend/spec/` and follow test-driven development (TD
 | userModel | userModelSpec.js | 20 | All database query functions including username lookup |
 | authController | authControllerSpec.js | 35 | All route business logic including username uniqueness and email format validation |
 | chatHistory | chatHistorySpec.js | 15 | Chat creation, message storage, retrieval, and search functionality |
-| **Total** | | **85** | |
+| chatController | chatControllerSpec.js | 8 | Validates API behavior, request handling, and error responses |
+| **Total** | | **93** | |
 
 ### Acceptance Tests (Cucumber.js)
 Managed by the Testing team. See the Testing team's documentation for scenario definitions and step implementations.
