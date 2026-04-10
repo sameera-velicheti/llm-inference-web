@@ -1,5 +1,21 @@
 const db = require("../config/db");
 
+exports.createChat = (userId, title) => {
+  const result = db.prepare(`
+    INSERT INTO chats (user_id, title)
+    VALUES (?, ?)
+  `).run(userId, title);
+
+  return result.lastInsertRowid;
+};
+
+exports.addMessage = (chatId, role, message) => {
+  return db.prepare(`
+    INSERT INTO messages (chat_id, role, message)
+    VALUES (?, ?, ?)
+  `).run(chatId, role, message);
+};
+
 exports.getChatsByUser = (userId) => {
     return new Promise((resolve, reject) => {
         db.all(
