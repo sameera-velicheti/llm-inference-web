@@ -17,3 +17,12 @@ Data/Time: 4/3 - 16:54 - Pull Request: main.js - Change: Add search functionalit
 Data/Time: 4/3 - 17:08 - Pull Request: main.js - Change: Add searchChats route to chatRoute 
 Data/Time: 4/3 - 17:13 - Pull Request: main.js - Change: Add searchChats function to Controller
 Data/Time: 4/3 - 17:19 - Pull Request: main.js - Change: Implement searchChats function for chat search in chatModel.js
+Data/Time: 4/9 - 21:09 - Pull Request: main.js - Change: Add routes for creating chats and adding messages to chatRoute.js
+Data/Time: 4/9 - 21:15 - Pull Request: main.js - Change: Add createChat and addMessage functions to chatController.js
+Data/Time: 4/9 - 21:19 - Pull Request: main.js - Change: Implement chat creation and message addition functions in chatModel.js
+Data/Time: 4/9 - 22:04 - Pull Request: main.js - Change: Refactor chatModel to use prepared statements
+Data/Time: 4/9 - 22:30 - Pull Request: main.js - Change: Refactor chat message handling and API integration in chat-user.html
+Data/Time: 4/9 - 22:53 - Pull Request: main.js - Change: Add route to get messages for a specific chat
+Data/Time: 4/9 - 23:16 - Pull Request: main.js - Change: Add getMessages function to chatController
+Data/Time: 4/9 - 23:21 - Pull Request: main.js - Change: Return object with last insert ID for chat and message
+Data/Time: 4/9 - 23:28 - Pull Request: main.js - Change: Update and rename chatHistory.js to chatHistorySpec.js
