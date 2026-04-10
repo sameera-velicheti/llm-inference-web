@@ -1,5 +1,33 @@
 const chatModel = require("../models/chatModel");
 
+exports.createChat = async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    const { title } = req.body;
+
+    const chatId = await chatModel.createChat(userId, title);
+
+    res.json({ chatId });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to create chat" });
+  }
+};
+
+exports.addMessage = async (req, res) => {
+  try {
+    const { chatId } = req.params;
+    const { role, message } = req.body;
+
+    await chatModel.addMessage(chatId, role, message);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to save message" });
+  }
+};
+
 exports.getUserChats = async (req, res) => {
     try {
         const chats = await chatModel.getChatsByUser(req.session.user.id);
