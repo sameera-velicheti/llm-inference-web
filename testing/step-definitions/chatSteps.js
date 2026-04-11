@@ -4,18 +4,12 @@
 // NOTE: The 'the user is logged in' step is defined in authSteps.js.
 // Since both files share the same cookie jar via helpers.js, the session
 // established in that step carries over to all API calls here.
-//
-// NOTE: createChat currently returns { chatId: { id: N } } due to a bug
-// in chatController.js (see GitHub Issue). Once fixed, chatId will be a
-// plain number. These tests are written for the CORRECT behavior and will
-// fail until the bug is resolved — which is intentional.
 
 const { Given, When, Then } = require('@cucumber/cucumber');
 const assert = require('assert');
 const { apiRequest } = require('./helpers');
 
 // ── Test user for chat scenarios ─────────────────────────────
-// Uses a separate set of credentials to avoid conflicts with auth tests
 const ts = Date.now();
 const CHAT_USER = {
   username: `chatuser${ts}`,
@@ -39,8 +33,6 @@ async function loginChatUser() {
 }
 
 // ── View Previous Chats ──────────────────────────────────────
-// Note: 'the user is logged in' Given step is defined in authSteps.js.
-// It registers + logs in TEST_USER and sets the shared session cookie.
 
 When('the user opens the authenticated chat page', async function () {
   const res = await apiRequest('/api/chats');
@@ -60,25 +52,32 @@ Then("the user's previous chats should be displayed", function () {
 Given('the user is logged in on the authenticated chat page', async function () {
   await loginChatUser();
 
-  // Create a test chat with a message so there is something to reopen
+  // Create a test chat
   const chatRes  = await apiRequest('/api/chats', {
     method: 'POST',
     body: JSON.stringify({ title: 'Reopen Test Chat' })
   });
   const chatData = await chatRes.json();
-
-  // chatId should be a plain number after the createChat bug is fixed
+  console.log('createChat response:', JSON.stringify(chatData));
   this.testChatId = chatData.chatId;
+  console.log('testChatId set to:', this.testChatId);
 
-  await apiRequest(`/api/chats/${this.testChatId}/messages`, {
+  // Post a message to that chat
+  const msgRes = await apiRequest(`/api/chats/${this.testChatId}/messages`, {
     method: 'POST',
     body: JSON.stringify({ role: 'user', message: 'Hello from reopen test' })
   });
+  const msgData = await msgRes.json();
+  console.log('addMessage status:', msgRes.status);
+  console.log('addMessage response:', JSON.stringify(msgData));
 });
 
 When('the user selects a previous chat', async function () {
   const res = await apiRequest(`/api/chats/${this.testChatId}/messages`);
-  this.messagesResponse = await res.json();
+  console.log('getMessages status:', res.status);
+  const data = await res.json();
+  console.log('getMessages response:', JSON.stringify(data));
+  this.messagesResponse = data;
   this.messagesStatus   = res.status;
 });
 
@@ -92,9 +91,6 @@ Then('the messages from that chat should be displayed', function () {
 });
 
 // ── Search Chats ─────────────────────────────────────────────
-// Reuses 'the user is logged in on the authenticated chat page' Given
-// which already creates a chat titled 'Reopen Test Chat'.
-// Searching for 'Reopen' should return at least that chat.
 
 When('the user enters a keyword into the chat search bar', async function () {
   const res = await apiRequest('/api/chats/search?q=Reopen');
@@ -112,7 +108,6 @@ Then('matching chats should be displayed', function () {
 });
 
 // ── Auto-save ────────────────────────────────────────────────
-// Note: 'the user is logged in' Given step is defined in authSteps.js.
 
 When('the user sends a message in a chat', async function () {
   // Create a new chat
@@ -121,22 +116,28 @@ When('the user sends a message in a chat', async function () {
     body: JSON.stringify({ title: 'Auto-save Test Chat' })
   });
   const chatData = await chatRes.json();
+  console.log('auto-save createChat response:', JSON.stringify(chatData));
   this.autoSaveChatId = chatData.chatId;
+  console.log('autoSaveChatId set to:', this.autoSaveChatId);
 
-  // Send a message — this should auto-save it
-  await apiRequest(`/api/chats/${this.autoSaveChatId}/messages`, {
+  // Send a message
+  const msgRes = await apiRequest(`/api/chats/${this.autoSaveChatId}/messages`, {
     method: 'POST',
     body: JSON.stringify({
       role:    'user',
       message: 'This message should be automatically saved'
     })
   });
+  const msgData = await msgRes.json();
+  console.log('auto-save addMessage status:', msgRes.status);
+  console.log('auto-save addMessage response:', JSON.stringify(msgData));
 });
 
 Then('the message should be automatically saved to chat history', async function () {
-  // Retrieve messages for the chat and verify the message was persisted
   const res      = await apiRequest(`/api/chats/${this.autoSaveChatId}/messages`);
+  console.log('auto-save getMessages status:', res.status);
   const messages = await res.json();
+  console.log('auto-save getMessages response:', JSON.stringify(messages));
 
   assert.strictEqual(res.status, 200,
     `Expected 200 but got ${res.status}`);

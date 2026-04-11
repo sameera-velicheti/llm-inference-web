@@ -42,7 +42,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     chat_id INTEGER,
-    sender TEXT,
+    role TEXT,          -- rename sender → role
     message TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
