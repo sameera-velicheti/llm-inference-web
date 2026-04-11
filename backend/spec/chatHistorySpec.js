@@ -3,31 +3,36 @@ const chatModel = require("../src/models/chatModel");
 
 describe("chatModel (chat history)", () => {
 
+  let mockStmt;
+
   beforeEach(() => {
-    spyOn(db, "prepare").and.callFake(() => ({
+    // Create the mock statement once and hold a reference to it
+    mockStmt = {
       run: jasmine.createSpy("run").and.returnValue({ lastInsertRowid: 10 }),
       get: jasmine.createSpy("get"),
       all: jasmine.createSpy("all").and.returnValue([])
-    }));
+    };
+    spyOn(db, "prepare").and.returnValue(mockStmt);
   });
 
   it("should create a new chat", () => {
-    const id = chatModel.createChat(1, "Test Chat");
+    const result = chatModel.createChat(1, "Test Chat");
 
     expect(db.prepare).toHaveBeenCalled();
-    expect(id).toBe(10);
+    // createChat returns { id: lastInsertRowid } so check result.id
+    expect(result.id).toBe(10);
   });
 
   it("should add a message to chat", () => {
     chatModel.addMessage(1, "user", "Hello");
 
-    const stmt = db.prepare();
-    expect(stmt.run).toHaveBeenCalledWith(1, "user", "Hello");
+    // Use mockStmt directly — no second prepare() call needed
+    expect(mockStmt.run).toHaveBeenCalledWith(1, "user", "Hello");
   });
 
   it("should retrieve messages for a chat", () => {
-    const stmt = db.prepare();
-    stmt.all.and.returnValue([
+    // Set the return value on mockStmt before calling the model
+    mockStmt.all.and.returnValue([
       { role: "user", message: "Hi" }
     ]);
 
@@ -38,8 +43,7 @@ describe("chatModel (chat history)", () => {
   });
 
   it("should search chats", () => {
-    const stmt = db.prepare();
-    stmt.all.and.returnValue([{ id: 1, title: "Test" }]);
+    mockStmt.all.and.returnValue([{ id: 1, title: "Test" }]);
 
     const result = chatModel.searchChats(1, "Test");
 
