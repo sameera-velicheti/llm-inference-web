@@ -15,7 +15,7 @@ describe("chatController", () => {
   });
 
   it("should create chat", async () => {
-    spyOn(chatModel, "createChat").and.returnValue(5);
+    spyOn(chatModel, "createChat").and.returnValue({ id: 5 });
 
     const req = {
       session: { user: { id: 1 } },
