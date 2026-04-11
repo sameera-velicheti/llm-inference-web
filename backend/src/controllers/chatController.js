@@ -28,10 +28,8 @@ exports.createChat = async (req, res) => {
   try {
     const userId = req.session.user.id;
     const { title } = req.body;
-
-    const chatId = await chatModel.createChat(userId, title);
-
-    res.json({ chatId });
+    const chat = chatModel.createChat(userId, title);
+    res.json({ chatId: chat.id });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to create chat" });
