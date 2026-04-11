@@ -30,6 +30,7 @@
   },
   "devDependencies": {
     "@cucumber/cucumber": "^11.3.0",
+    "jasmine": "^5.0.0",
     "puppeteer": "^24.39.1"
   }
 }
