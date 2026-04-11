@@ -58,26 +58,18 @@ Given('the user is logged in on the authenticated chat page', async function () 
     body: JSON.stringify({ title: 'Reopen Test Chat' })
   });
   const chatData = await chatRes.json();
-  console.log('createChat response:', JSON.stringify(chatData));
   this.testChatId = chatData.chatId;
-  console.log('testChatId set to:', this.testChatId);
 
   // Post a message to that chat
-  const msgRes = await apiRequest(`/api/chats/${this.testChatId}/messages`, {
+  await apiRequest(`/api/chats/${this.testChatId}/messages`, {
     method: 'POST',
     body: JSON.stringify({ role: 'user', message: 'Hello from reopen test' })
   });
-  const msgData = await msgRes.json();
-  console.log('addMessage status:', msgRes.status);
-  console.log('addMessage response:', JSON.stringify(msgData));
 });
 
 When('the user selects a previous chat', async function () {
   const res = await apiRequest(`/api/chats/${this.testChatId}/messages`);
-  console.log('getMessages status:', res.status);
-  const data = await res.json();
-  console.log('getMessages response:', JSON.stringify(data));
-  this.messagesResponse = data;
+  this.messagesResponse = await res.json();
   this.messagesStatus   = res.status;
 });
 
@@ -116,28 +108,21 @@ When('the user sends a message in a chat', async function () {
     body: JSON.stringify({ title: 'Auto-save Test Chat' })
   });
   const chatData = await chatRes.json();
-  console.log('auto-save createChat response:', JSON.stringify(chatData));
   this.autoSaveChatId = chatData.chatId;
-  console.log('autoSaveChatId set to:', this.autoSaveChatId);
 
   // Send a message
-  const msgRes = await apiRequest(`/api/chats/${this.autoSaveChatId}/messages`, {
+  await apiRequest(`/api/chats/${this.autoSaveChatId}/messages`, {
     method: 'POST',
     body: JSON.stringify({
       role:    'user',
       message: 'This message should be automatically saved'
     })
   });
-  const msgData = await msgRes.json();
-  console.log('auto-save addMessage status:', msgRes.status);
-  console.log('auto-save addMessage response:', JSON.stringify(msgData));
 });
 
 Then('the message should be automatically saved to chat history', async function () {
   const res      = await apiRequest(`/api/chats/${this.autoSaveChatId}/messages`);
-  console.log('auto-save getMessages status:', res.status);
   const messages = await res.json();
-  console.log('auto-save getMessages response:', JSON.stringify(messages));
 
   assert.strictEqual(res.status, 200,
     `Expected 200 but got ${res.status}`);
