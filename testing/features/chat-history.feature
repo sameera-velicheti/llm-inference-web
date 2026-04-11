@@ -14,3 +14,8 @@ Feature: Chat History and Search
     Given the user is logged in on the authenticated chat page
     When the user enters a keyword into the chat search bar
     Then matching chats should be displayed
+
+  Scenario: Messages are automatically saved to chat history
+    Given the user is logged in
+    When the user sends a message in a chat
+    Then the message should be automatically saved to chat history
