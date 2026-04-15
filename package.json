@@ -1,36 +1,31 @@
 {
   "name": "llm-inference-web",
   "version": "1.0.0",
-  "description": "A web interface for large language model inference with authentication, guest access, and a modular backend architecture.",
+  "description": "Multi-LLM web interface — ECE 452 Group 8",
   "main": "index.js",
   "scripts": {
-    "test": "npx jasmine --config=backend/spec/support/jasmine.json",
-    "test:acceptance": "cucumber-js --require 'testing/step-definitions/*.js' 'testing/features/**/*.feature'",
-    "test:browser": "node testing/puppeteer/login.js"
+    "start":            "node backend/server.js",
+    "test":             "npx jasmine --config=backend/spec/support/jasmine.json",
+    "test:acceptance":  "cucumber-js --require 'testing/step-definitions/*.js' 'testing/features/**/*.feature'",
+    "test:browser":     "node testing/puppeteer/multi-model.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sameera-velicheti/llm-inference-web.git"
+    "url":  "git+https://github.com/sameera-velicheti/llm-inference-web.git"
   },
-  "keywords": [],
-  "author": "",
   "license": "ISC",
   "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/sameera-velicheti/llm-inference-web/issues"
-  },
-  "homepage": "https://github.com/sameera-velicheti/llm-inference-web#readme",
   "dependencies": {
-    "bcrypt": "^6.0.0",
-    "better-sqlite3": "^12.6.2",
-    "cookie-parser": "^1.4.7",
-    "express": "^5.2.1",
-    "express-session": "^1.19.0",
-    "uuid": "^13.0.0"
+    "bcrypt":           "^6.0.0",
+    "better-sqlite3":   "^12.6.2",
+    "cookie-parser":    "^1.4.7",
+    "express":          "^5.2.1",
+    "express-session":  "^1.19.0",
+    "uuid":             "^13.0.0"
   },
   "devDependencies": {
     "@cucumber/cucumber": "^11.3.0",
-    "jasmine": "^5.0.0",
-    "puppeteer": "^24.39.1"
+    "jasmine":            "^5.0.0",
+    "puppeteer":          "^24.39.1"
   }
 }

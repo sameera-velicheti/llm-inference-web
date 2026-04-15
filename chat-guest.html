@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Inference — Chat (Guest)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .response-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      padding: 1rem 1.5rem;
+      flex: 1;
+      overflow-y: auto;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      box-sizing: border-box;
+    }
+    .response-grid.expanded { grid-template-columns: 1fr; }
+    .response-grid.expanded .model-card.collapsed { display: none; }
+    .response-grid.pinned { grid-template-columns: 1fr; }
+    .model-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .model-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 0.85rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .model-name { font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.07em; }
+    .model-badge { font-size:0.68rem; padding:0.15rem 0.5rem; border-radius:20px; background:var(--bg); border:1px solid var(--border); color:var(--muted); }
+    .model-badge.streaming { color:#2a9d5c; border-color:#2a9d5c; }
+    .model-badge.done      { color:var(--muted); }
+    .model-badge.error     { color:var(--accent); border-color:var(--accent); }
+    .card-btn { font-size:0.72rem; font-family:var(--font-body); font-weight:500; padding:0.25rem 0.6rem; border-radius:4px; border:1px solid var(--border); background:var(--surface); cursor:pointer; color:var(--text); }
+    .card-btn:hover { background:var(--bg); }
+    .card-btn.active { background:var(--text); color:var(--bg); border-color:var(--text); }
+    .model-card-body { flex:1; padding:0.85rem; overflow-y:auto; font-size:0.9rem; line-height:1.65; color:var(--text); min-height:120px; max-height:320px; white-space:pre-wrap; word-break:break-word; }
+    .model-card.expanded .model-card-body { max-height:60vh; }
+    .spinner { display:inline-block; width:14px; height:14px; border:2px solid var(--border); border-top-color:var(--text); border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; margin-right:6px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .history-section { flex:0 0 auto; max-height:35vh; overflow-y:auto; padding:0.75rem 1.5rem 0; max-width:1200px; width:100%; margin:0 auto; }
+    .pinned-banner { display:flex; align-items:center; gap:0.6rem; padding:0.5rem 1.5rem; background:#eaf4ff; border-bottom:1px solid #b3d4f5; font-size:0.82rem; color:#1d6fbf; flex-shrink:0; }
+    .pinned-banner button { margin-left:auto; font-size:0.72rem; padding:0.2rem 0.55rem; border-radius:4px; border:1px solid #1d6fbf; background:transparent; color:#1d6fbf; cursor:pointer; }
+    .pinned-banner button:hover { background:#1d6fbf; color:#fff; }
+    .pinned-banner.hidden { display:none; }
+  </style>
+</head>
+<body class="chat-body">
+<div class="chat-main" style="width:100%;display:flex;flex-direction:column;height:100vh;">
+
+  <header class="chat-header">
+    <span class="chat-logo">&#x25C6; LLM Interface</span>
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+      <span class="chat-badge">Guest session</span>
+      <a href="login.html" class="btn btn-secondary" style="padding:0.4rem 0.9rem;font-size:0.82rem;">Sign in</a>
+    </div>
+  </header>
+
+  <div class="pinned-banner hidden" id="pinnedBanner">
+    <span>Chatting with <strong id="pinnedName"></strong></span>
+    <button id="unpinBtn">&#x2715; Back to all models</button>
+  </div>
+
+  <div class="history-section" id="historySection" style="display:none;"></div>
+
+  <div id="welcomeMsg" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:3rem 1rem;color:var(--muted);">
+    <h2 style="font-family:var(--font-display);font-size:1.8rem;font-weight:400;color:var(--text);margin-bottom:0.5rem;">Hello!</h2>
+    <p style="font-size:0.9rem;">You are chatting as a guest. Ask a question — llama3.2, mistral and gemma3 will all respond.</p>
+  </div>
+
+  <div class="response-grid" id="responseGrid" style="display:none;"></div>
+
+  <div class="chat-input-area">
+    <div class="chat-input-inner">
+      <textarea id="chatInput" rows="1" placeholder="Ask anything…"></textarea>
+      <button class="chat-send-btn" id="sendBtn">Send</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const ALL_MODELS = ["llama3.2", "mistral", "gemma3"];
+const MODEL_COLORS = { "llama3.2":"#6c3d91", "mistral":"#c07a00", "gemma3":"#1d6fbf" };
+
+let pinnedModel   = null;
+let expandedModel = null;
+let isStreaming   = false;
+// Guest gets a fake chatId of "guest" — the server streams without saving
+const GUEST_CHAT_ID = "guest";
+
+// Session guard
+(async () => {
+  try {
+    const res  = await fetch("/api/auth/me");
+    const data = await res.json();
+    if (!data.guest && !data.user && !data.casUser) window.location.href = "index.html";
+  } catch { window.location.href = "index.html"; }
+})();
+
+const chatInput = document.getElementById("chatInput");
+chatInput.addEventListener("input", () => { chatInput.style.height="auto"; chatInput.style.height=chatInput.scrollHeight+"px"; });
+chatInput.addEventListener("keydown", (e) => { if (e.key==="Enter"&&!e.shiftKey) { e.preventDefault(); sendMessage(); } });
+document.getElementById("sendBtn").addEventListener("click", sendMessage);
+
+document.getElementById("unpinBtn").addEventListener("click", () => {
+  pinnedModel = null;
+  document.getElementById("pinnedBanner").classList.add("hidden");
+  document.getElementById("responseGrid").style.display = "none";
+});
+
+function appendHistoryBubble(role, text, modelName) {
+  const section = document.getElementById("historySection");
+  section.style.display = "block";
+  const wrap = document.createElement("div");
+  wrap.className = `message ${role === "user" ? "user" : "assistant"}`;
+  const bubble = document.createElement("div");
+  bubble.className = "message-bubble";
+  bubble.textContent = text;
+  if (modelName && role === "assistant") {
+    const tag = document.createElement("span");
+    tag.style.cssText = "display:block;font-size:0.68rem;margin-top:4px;opacity:0.6;";
+    tag.textContent = modelName;
+    bubble.appendChild(tag);
+  }
+  wrap.appendChild(bubble);
+  section.appendChild(wrap);
+  section.scrollTop = section.scrollHeight;
+}
+
+function buildResponseGrid(models) {
+  const grid = document.getElementById("responseGrid");
+  grid.innerHTML = "";
+  grid.style.display = "grid";
+  grid.className = models.length === 1 ? "response-grid pinned" : "response-grid";
+  expandedModel = null;
+  document.getElementById("welcomeMsg").style.display = "none";
+
+  for (const model of models) {
+    const color = MODEL_COLORS[model] || "#555";
+    const card = document.createElement("div");
+    card.className = "model-card";
+    card.id = `card-${model}`;
+    card.innerHTML = `
+      <div class="model-card-header" style="border-top:3px solid ${color};">
+        <span class="model-name" style="color:${color};">${model}</span>
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+          <span class="model-badge streaming" id="badge-${model}"><span class="spinner"></span>waiting…</span>
+          <button class="card-btn" id="expand-${model}">&#x26F6; Expand</button>
+          <button class="card-btn" id="transfer-${model}">&#x21AA; Use only</button>
+        </div>
+      </div>
+      <div class="model-card-body" id="body-${model}"></div>
+    `;
+    grid.appendChild(card);
+    document.getElementById(`expand-${model}`).addEventListener("click", () => toggleExpand(model));
+    document.getElementById(`transfer-${model}`).addEventListener("click", () => transferToModel(model));
+  }
+}
+
+function appendToken(model, token) {
+  const b = document.getElementById(`body-${model}`);
+  if (b) b.textContent += token;
+}
+function markModelDone(model) {
+  const b = document.getElementById(`badge-${model}`);
+  if (b) { b.className="model-badge done"; b.textContent="done"; }
+}
+function markModelError(model, msg) {
+  const b = document.getElementById(`badge-${model}`);
+  if (b) { b.className="model-badge error"; b.textContent="error"; }
+  const body = document.getElementById(`body-${model}`);
+  if (body) body.textContent = `⚠ ${msg}`;
+}
+
+function toggleExpand(model) {
+  const grid = document.getElementById("responseGrid");
+  const isExpanded = expandedModel === model;
+  expandedModel = isExpanded ? null : model;
+  grid.classList.toggle("expanded", !isExpanded);
+  ALL_MODELS.forEach(m => {
+    const c = document.getElementById(`card-${m}`);
+    const b = document.getElementById(`expand-${m}`);
+    if (!c) return;
+    if (m === model && !isExpanded) {
+      c.classList.add("expanded"); c.classList.remove("collapsed");
+      if (b) { b.classList.add("active"); b.textContent="⛶ Collapse"; }
+    } else {
+      c.classList.remove("expanded");
+      c.classList.toggle("collapsed", !isExpanded);
+      if (b) { b.classList.remove("active"); b.textContent="⛶ Expand"; }
+    }
+  });
+}
+
+function transferToModel(model) {
+  pinnedModel = model;
+  const banner = document.getElementById("pinnedBanner");
+  banner.classList.remove("hidden");
+  document.getElementById("pinnedName").textContent = model;
+  // Move current responses to history
+  ALL_MODELS.forEach(m => {
+    const body = document.getElementById(`body-${m}`);
+    if (body && body.textContent.trim()) appendHistoryBubble("assistant", body.textContent.trim(), m);
+  });
+  document.getElementById("responseGrid").style.display = "none";
+}
+
+async function sendMessage() {
+  const text = chatInput.value.trim();
+  if (!text || isStreaming) return;
+  isStreaming = true;
+  const sendBtn = document.getElementById("sendBtn");
+  sendBtn.disabled = true;
+  chatInput.value = "";
+  chatInput.style.height = "auto";
+
+  appendHistoryBubble("user", text, null);
+  const models = pinnedModel ? [pinnedModel] : ALL_MODELS;
+  buildResponseGrid(models);
+
+  const params = new URLSearchParams({ message: text });
+  if (pinnedModel) params.set("pinnedModel", pinnedModel);
+
+  const sse = new EventSource(`/api/chats/${GUEST_CHAT_ID}/stream?${params}`);
+  let doneCount = 0;
+
+  sse.onmessage = (e) => {
+    let data; try { data = JSON.parse(e.data); } catch { return; }
+    if (data.token !== undefined) appendToken(data.model, data.token);
+    else if (data.done)  { markModelDone(data.model); doneCount++; }
+    else if (data.error) { markModelError(data.model, data.error); doneCount++; }
+    if (doneCount >= models.length) { sse.close(); isStreaming=false; sendBtn.disabled=false; }
+  };
+  sse.onerror = () => { sse.close(); isStreaming=false; sendBtn.disabled=false; };
+}
+</script>
+</body>
+</html>
