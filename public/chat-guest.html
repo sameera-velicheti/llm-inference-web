@@ -102,7 +102,6 @@
       // Placeholder response — LLM integration comes in a future iteration
       // appendMessage("assistant", "LLM inference is not yet connected. This is a placeholder response.");
       // Response
-      import { Ollama } from 'ollama';
       const ollama = new Ollama({ host: 'http://localhost:11434' });
       const response = await ollama.chat({
       model: 'llama3',
