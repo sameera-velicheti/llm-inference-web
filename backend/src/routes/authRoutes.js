@@ -2,7 +2,6 @@
 const { requireAuth } = require("../middleware/authMiddleware");
 const express = require("express");
 const authController = require("../controllers/authController");
-import { Ollama } from 'ollama';
 
 // Create a router object
 const router = express.Router();
