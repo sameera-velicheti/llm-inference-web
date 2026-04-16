@@ -6,7 +6,8 @@
   "scripts": {
     "test": "npx jasmine --config=backend/spec/support/jasmine.json",
     "test:acceptance": "cucumber-js --require 'testing/step-definitions/*.js' 'testing/features/**/*.feature'",
-    "test:browser": "node testing/puppeteer/login.js"
+    "test:browser": "node testing/puppeteer/login.js",
+    "lint": "eslint backend/src/**/*.js"
   },
   "repository": {
     "type": "git",
@@ -30,6 +31,8 @@
   },
   "devDependencies": {
     "@cucumber/cucumber": "^11.3.0",
+    "eslint": "^10.2.0",
+    "globals": "^17.5.0",
     "jasmine": "^5.0.0",
     "puppeteer": "^24.39.1"
   }
