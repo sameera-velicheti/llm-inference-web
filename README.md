@@ -124,6 +124,46 @@ cd llm-inference-web
 npm install
 ```
 
+### Ollama Setup (Required for LLM Inference)
+
+This application uses [Ollama](https://ollama.com) to run local LLM inference.
+You must install Ollama and download the three models before the chat feature will work.
+
+**1. Install Ollama**
+
+Go to [https://ollama.com](https://ollama.com) and download the installer for your OS.
+- On Mac and Windows, Ollama runs automatically in the background after install.
+- On Linux, start it manually after install:
+
+```bash
+ollama serve
+```
+
+**2. Pull the three models**
+
+These downloads are 2–5 GB each, so run this on a good connection:
+
+```bash
+ollama pull llama3.2
+ollama pull mistral
+ollama pull gemma3
+```
+
+**3. Verify Ollama is running**
+
+```bash
+curl http://localhost:11434/api/tags
+```
+
+You should see a JSON list of your downloaded models. If you get a connection refused
+error, Ollama is not running — start it with `ollama serve`.
+
+> **Note:** The server must be able to reach `http://localhost:11434`. If you change
+> the Ollama port, set the environment variable `OLLAMA_URL` before starting the server:
+> ```bash
+> OLLAMA_URL=http://localhost:YOUR_PORT node backend/server.js
+> ```
+
 ### Running the Server
 
 ```bash
