@@ -6,7 +6,7 @@
   "scripts": {
     "start":            "node backend/server.js",
     "test":             "npx jasmine --config=backend/spec/support/jasmine.json",
-    "test:acceptance":  "cucumber-js --require 'testing/step-definitions/*.js' 'testing/features/**/*.feature'",
+    "test:acceptance": "cucumber-js --require testing/step-definitions/*.js testing/features/**/*.feature",
     "test:browser":     "node testing/puppeteer/multi-model.js"
   },
   "repository": {
