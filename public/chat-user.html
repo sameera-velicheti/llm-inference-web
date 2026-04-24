@@ -9,248 +9,334 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
+
 <body class="chat-body">
   <div class="chat-layout">
 
-  <!-- Sidebar -->
-  <aside class="chat-sidebar">
-    <input
-    type="text"
-    id="chatSearch"
-    class="chat-search"
-    placeholder="Search chats..."
-  />
-    <h3 class="sidebar-title">Previous Chats</h3>
-    <div id="chatList"></div>
-  </aside>
+    <!-- Sidebar -->
+    <aside class="chat-sidebar">
+      <input
+        type="text"
+        id="chatSearch"
+        class="chat-search"
+        placeholder="Search chats..."
+      />
 
-  <!-- Main Chat Area -->
-  <div class="chat-main">
+      <h3 class="sidebar-title">Previous Chats</h3>
+      <div id="chatList"></div>
+    </aside>
 
-  <header class="chat-header">
-    <span class="chat-logo">&#x25C6; LLM Interface</span>
-    <div style="display:flex; align-items:center; gap:0.75rem;">
-      <span class="chat-badge" id="userBadge">Signed in</span>
-      <button class="btn btn-secondary" id="logoutBtn" style="padding:0.4rem 0.9rem; font-size:0.82rem;">Log out</button>
-    </div>
-  </header>
+    <!-- Main Chat Area -->
+    <div class="chat-main">
 
-  <div class="chat-messages" id="chatMessages">
-    <div class="chat-welcome" id="welcomeMsg">
-      <h2>Hello!</h2>
-      <p id="welcomeSub">Ask me anything.</p>
-    </div>
-  </div>
+      <header class="chat-header">
+        <span class="chat-logo">&#x25C6; LLM Interface</span>
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+          <span class="chat-badge" id="userBadge">Signed in</span>
+          <button class="btn btn-secondary" id="logoutBtn" style="padding:0.4rem 0.9rem; font-size:0.82rem;">
+            Log out
+          </button>
+        </div>
+      </header>
 
-  <div class="chat-input-area">
-    <div class="chat-input-inner">
-      <textarea
-        id="chatInput"
-        rows="1"
-        placeholder="Ask anything…"
-      ></textarea>
-      <button class="chat-send-btn" id="sendBtn">Send</button>
-    </div>
-  </div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="chat-welcome" id="welcomeMsg">
+          <h2>Hello!</h2>
+          <p id="welcomeSub">Ask me anything.</p>
+        </div>
+      </div>
 
-  <script>
-    // ── Session guard ────────────────────────────────────────
-    let currentChatId = null; 
-    (async () => {
-      try {
-        const res  = await fetch("/api/auth/me");
-        const data = await res.json();
+      <!-- Multi-LLM response cards -->
+      <div id="multiLLMResponses" class="multi-llm-responses"></div>
 
-        if (data.user) {
-          // Badge shows email, welcome message shows username
-          document.getElementById("userBadge").textContent = data.user.email;
-          document.getElementById("welcomeSub").textContent =
-            `Signed in as ${data.user.username}. Ask me anything.`;
-        } else {
-          window.location.href = "login.html";
+      <div class="chat-input-area">
+        <div class="chat-input-inner">
+          <textarea
+            id="chatInput"
+            rows="1"
+            placeholder="Ask anything…"
+          ></textarea>
+          <button class="chat-send-btn" id="sendBtn">Send</button>
+        </div>
+      </div>
+
+      <script>
+        let currentChatId = null;
+        let lastPrompt = "";
+        let activeModel = null;
+
+        // ── Session guard ────────────────────────────────────────
+        (async () => {
+          try {
+            const res = await fetch("/api/auth/me");
+            const data = await res.json();
+
+            if (data.user) {
+              document.getElementById("userBadge").textContent = data.user.email;
+              document.getElementById("welcomeSub").textContent =
+                `Signed in as ${data.user.username}. Ask me anything.`;
+            } else {
+              window.location.href = "login.html";
+            }
+          } catch {
+            window.location.href = "login.html";
+          }
+        })();
+
+        // ── Logout ───────────────────────────────────────────────
+        document.getElementById("logoutBtn").addEventListener("click", async () => {
+          try {
+            await fetch("/api/auth/logout", { method: "POST" });
+          } finally {
+            window.location.href = "index.html";
+          }
+        });
+
+        // ── Auto-resize textarea ─────────────────────────────────
+        const chatInput = document.getElementById("chatInput");
+
+        chatInput.addEventListener("input", () => {
+          chatInput.style.height = "auto";
+          chatInput.style.height = chatInput.scrollHeight + "px";
+        });
+
+        // ── Send on Enter ────────────────────────────────────────
+        chatInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+          }
+        });
+
+        document.getElementById("sendBtn").addEventListener("click", sendMessage);
+
+        // ── Message rendering ────────────────────────────────────
+        function appendMessage(role, text) {
+          const welcome = document.getElementById("welcomeMsg");
+          if (welcome) welcome.remove();
+
+          const container = document.getElementById("chatMessages");
+          const msg = document.createElement("div");
+          msg.className = `message ${role}`;
+
+          const bubble = document.createElement("div");
+          bubble.className = "message-bubble";
+          bubble.textContent = text;
+
+          msg.appendChild(bubble);
+          container.appendChild(msg);
+          container.scrollTop = container.scrollHeight;
         }
-      } catch {
-        window.location.href = "login.html";
-      }
-    })();
 
-    // ── Logout ───────────────────────────────────────────────
-    document.getElementById("logoutBtn").addEventListener("click", async () => {
-      try {
-        await fetch("/api/auth/logout", { method: "POST" });
-      } finally {
-        window.location.href = "index.html";
-      }
-    });
+        // ── Mock LLM Responses ───────────────────────────────────
+        function mockLLMResponse(model, prompt) {
+          if (model === "ChatGPT") {
+            return `ChatGPT response: Here is a clear and organized answer to "${prompt}".`;
+          }
 
-    // ── Auto-resize textarea ─────────────────────────────────
-    const chatInput = document.getElementById("chatInput");
-    chatInput.addEventListener("input", () => {
-      chatInput.style.height = "auto";
-      chatInput.style.height = chatInput.scrollHeight + "px";
-    });
+          if (model === "Claude") {
+            return `Claude response: Here is a thoughtful and detailed answer to "${prompt}".`;
+          }
 
-    // ── Send on Enter (Shift+Enter for newline) ──────────────
-    chatInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
-    });
+          return `Gemini response: Here is a quick and practical answer to "${prompt}".`;
+        }
 
-    document.getElementById("sendBtn").addEventListener("click", sendMessage);
+        function renderMultiLLMResponses(prompt) {
+          const container = document.getElementById("multiLLMResponses");
+          container.innerHTML = "";
 
-    // ── Message rendering ────────────────────────────────────
-    function appendMessage(role, text) {
-      const welcome = document.getElementById("welcomeMsg");
-      if (welcome) welcome.remove();
+          const models = ["ChatGPT", "Claude", "Gemini"];
 
-      const container = document.getElementById("chatMessages");
-      const msg       = document.createElement("div");
-      msg.className   = `message ${role}`;
+          models.forEach(model => {
+            const response = mockLLMResponse(model, prompt);
 
-      const bubble       = document.createElement("div");
-      bubble.className   = "message-bubble";
-      bubble.textContent = text;
+            const card = document.createElement("div");
+            card.className = "llm-card";
+            card.id = `${model}-card`;
 
-      msg.appendChild(bubble);
-      container.appendChild(msg);
-      container.scrollTop = container.scrollHeight;
-    }
+            card.innerHTML = `
+              <h3>${model}</h3>
+              <p id="${model}-response">${response}</p>
 
-    // ── Send message ─────────────────────────────────────────
-    async function sendMessage() {
-  const text = chatInput.value.trim();
-  const sendBtn = document.getElementById("sendBtn");
+              <p><strong>Do you prefer this response?</strong></p>
 
-  if (!text) return;
+              <button onclick="regenerateResponse('${model}')">
+                Regenerate
+              </button>
 
-  // Show user message immediately
-  appendMessage("user", text);
+              <button onclick="continueWithLLM('${model}')">
+                Continue with ${model}
+              </button>
+            `;
 
-  chatInput.value = "";
-  chatInput.style.height = "auto";
-  sendBtn.disabled = true;
+            container.appendChild(card);
+          });
+        }
 
-  try {
-    // Create chat if it doesn't exist yet
-    if (!currentChatId) {
-      const res = await fetch("/api/chats", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: text.substring(0, 25)
-        })
-      });
+        function regenerateResponse(model) {
+          const responseBox = document.getElementById(`${model}-response`);
 
-      const data = await res.json();
-      currentChatId = data.chatId;
+          responseBox.textContent =
+            `${model} regenerated response: Here is another version of the answer to "${lastPrompt}".`;
+        }
 
-      loadChats(); // refresh sidebar 
-    }
+        function continueWithLLM(model) {
+          activeModel = model;
 
-    // Save user message
-    await fetch(`/api/chats/${currentChatId}/messages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        role: "user",
-        message: text
-      })
-    });
+          document.querySelectorAll(".llm-card").forEach(card => {
+            card.classList.remove("active");
+          });
 
-    // Fake assistant reply (for now)
-    const reply = "LLM inference is not yet connected.";
+          const selectedCard = document.getElementById(`${model}-card`);
+          if (selectedCard) {
+            selectedCard.classList.add("active");
+          }
 
-    appendMessage("assistant", reply);
+          appendMessage("assistant", `You chose to continue with ${model}. Future responses will use this LLM.`);
+        }
 
-    // Save assistant message
-    await fetch(`/api/chats/${currentChatId}/messages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        role: "assistant",
-        message: reply
-      })
-    });
+        // ── Send message ─────────────────────────────────────────
+        async function sendMessage() {
+          const text = chatInput.value.trim();
+          const sendBtn = document.getElementById("sendBtn");
 
-  } catch (err) {
-    console.error(err);
-    appendMessage("assistant", "Error sending message.");
-  }
+          if (!text) return;
 
-  sendBtn.disabled = false;
-}
+          lastPrompt = text;
 
-    // ── Fetch Chat History ─────────────────────────────────────────
-    async function loadChats() {
-  try {
-    const res = await fetch("/api/chats");
-    const chats = await res.json();
+          appendMessage("user", text);
 
-    const chatList = document.getElementById("chatList");
-    chatList.innerHTML = "";
+          chatInput.value = "";
+          chatInput.style.height = "auto";
+          sendBtn.disabled = true;
 
-    chats.forEach(chat => {
-      const item = document.createElement("div");
-      item.className = "chat-item";
-      item.textContent = chat.title || "New Chat";
+          try {
+            // Create chat if it does not exist yet
+            if (!currentChatId) {
+              const res = await fetch("/api/chats", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  title: text.substring(0, 25)
+                })
+              });
 
-      item.onclick = () => loadMessages(chat.id);
+              const data = await res.json();
+              currentChatId = data.chatId;
 
-      chatList.appendChild(item);
-    });
-  } catch (err) {
-    console.error("Failed to load chats");
-  }
-}
+              loadChats();
+            }
 
-    // ── Load Chats ─────────────────────────────────────────
-    async function loadMessages(chatId) {
-      currentChatId = chatId;
-      
-  const res = await fetch(`/api/chats/${chatId}/messages`);
-  const messages = await res.json();
+            // Save user message
+            await fetch(`/api/chats/${currentChatId}/messages`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                role: "user",
+                message: text
+              })
+            });
 
-  const container = document.getElementById("chatMessages");
-  container.innerHTML = "";
+            let reply;
 
-  messages.forEach(m => {
-    appendMessage(m.role, m.message);
-  });
-}
+            if (activeModel) {
+              reply = mockLLMResponse(activeModel, text);
+              appendMessage("assistant", reply);
+            } else {
+              renderMultiLLMResponses(text);
+              reply = "Three LLM responses were generated. Choose one to continue.";
+              appendMessage("assistant", reply);
+            }
 
-    // ── Search Chats ─────────────────────────────────────────
-    const searchInput = document.getElementById("chatSearch");
+            // Save assistant message
+            await fetch(`/api/chats/${currentChatId}/messages`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                role: "assistant",
+                message: reply
+              })
+            });
 
-searchInput.addEventListener("input", async () => {
-  const query = searchInput.value.trim();
+          } catch (err) {
+            console.error(err);
+            appendMessage("assistant", "Error sending message.");
+          }
 
-  if (!query) {
-    loadChats(); // reload all chats
-    return;
-  }
-  
-  const res = await fetch(`/api/chats/search?q=${encodeURIComponent(query)}`);
-  const chats = await res.json();
+          sendBtn.disabled = false;
+        }
 
-  const chatList = document.getElementById("chatList");
-  chatList.innerHTML = "";
+        // ── Fetch Chat History ───────────────────────────────────
+        async function loadChats() {
+          try {
+            const res = await fetch("/api/chats");
+            const chats = await res.json();
 
-  chats.forEach(chat => {
-    const item = document.createElement("div");
-    item.className = "chat-item";
-    item.textContent = chat.title || "New Chat";
+            const chatList = document.getElementById("chatList");
+            chatList.innerHTML = "";
 
-    item.onclick = () => loadMessages(chat.id);
+            chats.forEach(chat => {
+              const item = document.createElement("div");
+              item.className = "chat-item";
+              item.textContent = chat.title || "New Chat";
 
-    chatList.appendChild(item);
-  });
-});
-   loadChats();
-    
-  </script>
+              item.onclick = () => loadMessages(chat.id);
+
+              chatList.appendChild(item);
+            });
+          } catch (err) {
+            console.error("Failed to load chats");
+          }
+        }
+
+        // ── Load Messages ────────────────────────────────────────
+        async function loadMessages(chatId) {
+          currentChatId = chatId;
+
+          const res = await fetch(`/api/chats/${chatId}/messages`);
+          const messages = await res.json();
+
+          const container = document.getElementById("chatMessages");
+          container.innerHTML = "";
+
+          document.getElementById("multiLLMResponses").innerHTML = "";
+
+          messages.forEach(m => {
+            appendMessage(m.role, m.message);
+          });
+        }
+
+        // ── Search Chats ─────────────────────────────────────────
+        const searchInput = document.getElementById("chatSearch");
+
+        searchInput.addEventListener("input", async () => {
+          const query = searchInput.value.trim();
+
+          if (!query) {
+            loadChats();
+            return;
+          }
+
+          const res = await fetch(`/api/chats/search?q=${encodeURIComponent(query)}`);
+          const chats = await res.json();
+
+          const chatList = document.getElementById("chatList");
+          chatList.innerHTML = "";
+
+          chats.forEach(chat => {
+            const item = document.createElement("div");
+            item.className = "chat-item";
+            item.textContent = chat.title || "New Chat";
+
+            item.onclick = () => loadMessages(chat.id);
+
+            chatList.appendChild(item);
+          });
+        });
+
+        loadChats();
+      </script>
+    </div>
   </div>
-</div>
 </body>
 </html>
