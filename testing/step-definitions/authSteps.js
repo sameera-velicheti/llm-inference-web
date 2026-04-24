@@ -99,3 +99,31 @@ When('the user enters a keyword into the chat search bar', function () {
 Then('matching chats should be displayed', function () {
   console.log('Matching chats are displayed');
 });
+
+Given('the user has received three LLM responses', function () {
+  console.log('User has received responses from chat, claude, and gemini');
+});
+
+When('the user sends a prompt to the LLM interface', function () {
+  console.log('User sends a prompt to the multi-LLM interface');
+});
+
+Then('three different LLM responses should be displayed', function () {
+  console.log('Three LLM responses are displayed');
+});
+
+When('the user regenerates one response', function () {
+  console.log('User clicks regenerate on one LLM response');
+});
+
+Then('a new response should be displayed for that LLM', function () {
+  console.log('Regenerated response is displayed');
+});
+
+When('the user chooses to continue with one LLM', function () {
+  console.log('User chooses one LLM to continue with');
+});
+
+Then('the selected LLM should become the active model', function () {
+  console.log('Selected LLM becomes active');
+});
