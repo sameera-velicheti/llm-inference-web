@@ -9,6 +9,9 @@ const authRoutes = require("./routes/authRoutes");
 // Import chat routes
 const chatRoute = require("./routes/chatRoute");
 
+// Import LLM routes
+const llmRoutes = require('./routes/llmRoutes');
+
 // Create Express app
 const app = express();
 
@@ -30,5 +33,6 @@ app.use(express.static(path.join(__dirname, "../../public")));
 
 app.use("/api/auth", authRoutes);
 app.use("/api", chatRoute);
+app.use('/api/llm', llmRoutes);
 
 module.exports = app;

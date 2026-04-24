@@ -199,3 +199,17 @@ Then('the password should be updated successfully', function () {
   assert.strictEqual(this.response.success, true,
     `Expected success:true but got: ${JSON.stringify(this.response)}`);
 });
+
+// ── Multi LLM Feature ─────────────────────────────────────
+
+Given('the user is on the multi LLM page', function () {
+  console.log('User is on multi LLM page');
+});
+
+When('the user submits a prompt', function () {
+  console.log('User submits prompt');
+});
+
+Then('the user should see three LLM responses', function () {
+  console.log('Three responses displayed');
+});

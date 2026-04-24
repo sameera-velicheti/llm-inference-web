@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Multiple LLM Responses</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body {
+      padding: 30px;
+      max-width: 900px;
+      margin: auto;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    .input-area {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 25px;
+    }
+
+    #promptInput {
+      flex: 1;
+      padding: 12px;
+      font-size: 18px;
+    }
+
+    button {
+      padding: 10px 14px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .card {
+      border: 1px solid #aaa;
+      border-radius: 10px;
+      padding: 18px;
+      margin-bottom: 15px;
+      background: #fafafa;
+    }
+
+    .card h3 {
+      margin-top: 0;
+    }
+
+    .selected {
+      margin-top: 25px;
+      padding: 15px;
+      border: 1px solid #444;
+      border-radius: 10px;
+      background: #f1f1f1;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Ask Multiple LLMs</h1>
+
+  <div class="input-area">
+    <input id="promptInput" type="text" placeholder="Enter your question">
+    <button id="submitBtn">Submit</button>
+  </div>
+
+  <div id="responses"></div>
+  <div id="selectedResponse"></div>
+
+  <script>
+    const submitBtn = document.getElementById('submitBtn');
+    const responsesDiv = document.getElementById('responses');
+    const selectedResponseDiv = document.getElementById('selectedResponse');
+
+    submitBtn.addEventListener('click', async () => {
+      const prompt = document.getElementById('promptInput').value;
+
+      const response = await fetch('/api/llm/multi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt })
+      });
+
+      const data = await response.json();
+      responsesDiv.innerHTML = '';
+      selectedResponseDiv.innerHTML = '';
+
+      data.responses.forEach((item) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        card.innerHTML = `
+          <h3>${item.model}</h3>
+
+          <p class="short">${item.text.substring(0, 45)}...</p>
+          <p class="full" style="display:none;">${item.text}</p>
+
+          <button onclick="toggleResponse(this)">Expand</button>
+          <button onclick="selectModel('${item.model}', '${item.text.replace(/'/g, "\\'")}')">Use this response</button>
+        `;
+
+        responsesDiv.appendChild(card);
+      });
+    });
+
+    function toggleResponse(button) {
+      const card = button.parentElement;
+      const shortText = card.querySelector('.short');
+      const fullText = card.querySelector('.full');
+
+      if (fullText.style.display === 'none') {
+        fullText.style.display = 'block';
+        shortText.style.display = 'none';
+        button.innerText = 'Collapse';
+      } else {
+        fullText.style.display = 'none';
+        shortText.style.display = 'block';
+        button.innerText = 'Expand';
+      }
+    }
+
+    function selectModel(model, text) {
+      selectedResponseDiv.innerHTML = `
+        <div class="selected">
+          <h3>Selected Response</h3>
+          <p><strong>${model}</strong> was selected.</p>
+          <p>${text}</p>
+        </div>
+      `;
+    }
+  </script>
+
+</body>
+</html>
