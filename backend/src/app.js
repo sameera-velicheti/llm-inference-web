@@ -12,9 +12,13 @@ const chatRoute = require("./routes/chatRoute");
 // Create Express app
 const app = express();
 
+const multiLLMRoute = require("./routes/multiLLMRoute");
+
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use("/api", multiLLMRoute);
 
 app.use(
   session({
