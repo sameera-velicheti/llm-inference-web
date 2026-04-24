@@ -508,17 +508,18 @@ input:focus { border-color: var(--text); }
 
 .multi-llm-responses {
   display: flex;
+  flex-direction: column; 
   gap: 1rem;
-  padding: 1rem;
-  flex-wrap: wrap;
+  padding: 1rem 1.5rem;
+  max-width: 760px;
+  margin: 0 auto;
 }
 
 .llm-card {
-  flex: 1;
-  min-width: 220px;
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 12px;
+  width: 100%;            
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
   padding: 1rem;
 }
 
@@ -528,9 +529,16 @@ input:focus { border-color: var(--text); }
 
 .llm-card button {
   margin-right: 0.5rem;
-  margin-top: 0.5rem;
-  padding: 0.4rem 0.7rem;
-  border-radius: 8px;
-  border: none;
+  margin-top: 0.6rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
   cursor: pointer;
+}
+
+.llm-card button:hover {
+  border-color: var(--text);
 }
