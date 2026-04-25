@@ -2,7 +2,7 @@ const multiLLMModel = require("../src/models/multiLLMModel");
 
 describe("multiLLMModel", () => {
   it("should return three LLM responses", () => {
-    const responses = multiLLMModel.getMultiResponses("Explain recursion");
+    const responses = multiLLMModel.getMultiResponses("What is JavaScript?");
 
     expect(responses.length).toBe(3);
     expect(responses[0].model).toBe("ChatGPT");
@@ -11,19 +11,19 @@ describe("multiLLMModel", () => {
   });
 
   it("should include the prompt in each response", () => {
-    const responses = multiLLMModel.getMultiResponses("Explain loops");
+    const responses = multiLLMModel.getMultiResponses("Explain organic chemistry");
 
     responses.forEach(item => {
-      expect(item.response).toContain("Explain loops");
+      expect(item.response).toContain("Explain organic chemistry");
     });
   });
 
   it("should regenerate a response for one model", () => {
-    const result = multiLLMModel.regenerateResponse("ChatGPT", "Explain arrays");
+    const result = multiLLMModel.regenerateResponse("ChatGPT", "Explain data structures");
 
     expect(result.model).toBe("ChatGPT");
     expect(result.response).toContain("regenerated");
-    expect(result.response).toContain("Explain arrays");
+    expect(result.response).toContain("Explain data structures");
   });
 
   it("should continue with a selected model", () => {

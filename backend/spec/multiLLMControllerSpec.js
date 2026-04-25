@@ -29,7 +29,7 @@ describe("multiLLMController", () => {
     });
 
     it("should return three LLM responses", async () => {
-      req = { body: { prompt: "Explain recursion" } };
+      req = { body: { prompt: "What is JavaScript?" } };
 
       await multiLLMController.getMultiResponses(req, res);
 
@@ -37,7 +37,7 @@ describe("multiLLMController", () => {
 
       const responseArg = statusJsonSpy.calls.mostRecent().args[0];
 
-      expect(responseArg.prompt).toBe("Explain recursion");
+      expect(responseArg.prompt).toBe("What is JavaScript?");
       expect(responseArg.responses.length).toBe(3);
       expect(responseArg.responses[0].model).toBe("ChatGPT");
       expect(responseArg.responses[1].model).toBe("Claude");
@@ -47,7 +47,7 @@ describe("multiLLMController", () => {
 
   describe("regenerateResponse", () => {
     it("should return 400 if model is missing", async () => {
-      req = { body: { prompt: "Explain recursion" } };
+      req = { body: { prompt: "What is JavaScript?" } };
 
       await multiLLMController.regenerateResponse(req, res);
 
@@ -72,7 +72,7 @@ describe("multiLLMController", () => {
       req = {
         body: {
           model: "ChatGPT",
-          prompt: "Explain recursion"
+          prompt: "What is JavaScript?"
         }
       };
 
