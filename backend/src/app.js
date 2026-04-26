@@ -2,20 +2,17 @@ const express = require("express");
 const session = require("express-session");
 const cookieParser = require("cookie-parser");
 const path = require("path");
-
 // Import auth routes
 const authRoutes = require("./routes/authRoutes");
-
 // Import chat routes
 const chatRoute = require("./routes/chatRoute");
-
+// Import LLM routes
+const llmRoute = require("./routes/llmRoute");
 // Create Express app
 const app = express();
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-
 app.use(
   session({
     secret: "iteration1-secret-key",
@@ -24,11 +21,9 @@ app.use(
     cookie: { secure: false }
   })
 );
-
 // Serve static frontend files from the public directory
 app.use(express.static(path.join(__dirname, "../../public")));
-
 app.use("/api/auth", authRoutes);
 app.use("/api", chatRoute);
-
+app.use("/api/llm", llmRoute);
 module.exports = app;
