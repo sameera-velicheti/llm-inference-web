@@ -1,11 +1,9 @@
 // Import SQLite package and path
 const Database = require("better-sqlite3");
 const path = require("path");
-
 // Create and open the SQLite database
 const dbPath = path.join(__dirname, "../../database/app.db");
 const db = new Database(dbPath);
-
 // SQL commands to create tables
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
@@ -15,7 +13,6 @@ db.exec(`
     password_hash TEXT NOT NULL,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
   );
-
   CREATE TABLE IF NOT EXISTS password_reset_tokens (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
@@ -24,28 +21,33 @@ db.exec(`
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(user_id) REFERENCES users(id)
   );
-
   CREATE TABLE IF NOT EXISTS sessions_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
     is_guest INTEGER DEFAULT 0,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
   );
-
   CREATE TABLE IF NOT EXISTS chats (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
     title TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
-
   CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     chat_id INTEGER,
-    role TEXT,          -- rename sender → role
+    role TEXT,
     message TEXT,
+    model_name TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 `);
+
+// Migration: add model_name to the messages table if it was created without it
+try {
+  db.exec(`ALTER TABLE messages ADD COLUMN model_name TEXT;`);
+} catch (e) {
+  if (!e.message.includes("duplicate column name")) throw e;
+}
 
 module.exports = db;
