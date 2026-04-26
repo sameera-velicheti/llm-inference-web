@@ -46,12 +46,11 @@ exports.createChat = (userId, title) => {
   return { id: result.lastInsertRowid };
 };
 
-exports.addMessage = (chatId, role, message) => {
+exports.addMessage = (chatId, role, message, modelName = null) => {
   const stmt = db.prepare(`
-    INSERT INTO messages (chat_id, role, message)
-    VALUES (?, ?, ?)
+    INSERT INTO messages (chat_id, role, message, model_name)
+    VALUES (?, ?, ?, ?)
   `);
-
-  const result = stmt.run(chatId, role, message);
+  const result = stmt.run(chatId, role, message, modelName);
   return { id: result.lastInsertRowid };
 };
