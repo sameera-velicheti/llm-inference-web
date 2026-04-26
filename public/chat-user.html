@@ -8,6 +8,89 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* ── Model selector bar ── */
+    .model-bar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.5rem 1.25rem;
+      background: #f9f9fb;
+      border-bottom: 1px solid #e5e7eb;
+      flex-wrap: wrap;
+    }
+    .model-bar label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .model-checkboxes {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .model-checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.85rem;
+      color: #374151;
+      cursor: pointer;
+    }
+    .model-checkbox-item input[type="checkbox"] {
+      accent-color: #4f46e5;
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+    }
+
+    /* ── Multi-model response group ── */
+    .model-response-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin: 0.5rem 0;
+      padding: 0 1rem;
+    }
+    .model-card {
+      flex: 1;
+      min-width: 200px;
+      max-width: 400px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .model-card-header {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.4rem;
+    }
+    .model-card-body {
+      font-size: 0.88rem;
+      line-height: 1.55;
+      color: #111827;
+      white-space: pre-wrap;
+    }
+    .model-card.error-card {
+      border-color: #fca5a5;
+      background: #fff1f2;
+    }
+    .model-card.error-card .model-card-body {
+      color: #b91c1c;
+      font-style: italic;
+    }
+    .model-card.loading-card .model-card-body {
+      color: #9ca3af;
+      font-style: italic;
+    }
+  </style>
 </head>
 <body class="chat-body">
   <div class="chat-layout">
@@ -15,11 +98,11 @@
   <!-- Sidebar -->
   <aside class="chat-sidebar">
     <input
-    type="text"
-    id="chatSearch"
-    class="chat-search"
-    placeholder="Search chats..."
-  />
+      type="text"
+      id="chatSearch"
+      class="chat-search"
+      placeholder="Search chats..."
+    />
     <h3 class="sidebar-title">Previous Chats</h3>
     <div id="chatList"></div>
   </aside>
@@ -27,42 +110,55 @@
   <!-- Main Chat Area -->
   <div class="chat-main">
 
-  <header class="chat-header">
-    <span class="chat-logo">&#x25C6; LLM Interface</span>
-    <div style="display:flex; align-items:center; gap:0.75rem;">
-      <span class="chat-badge" id="userBadge">Signed in</span>
-      <button class="btn btn-secondary" id="logoutBtn" style="padding:0.4rem 0.9rem; font-size:0.82rem;">Log out</button>
-    </div>
-  </header>
+    <header class="chat-header">
+      <span class="chat-logo">&#x25C6; LLM Interface</span>
+      <div style="display:flex; align-items:center; gap:0.75rem;">
+        <span class="chat-badge" id="userBadge">Signed in</span>
+        <button class="btn btn-secondary" id="logoutBtn" style="padding:0.4rem 0.9rem; font-size:0.82rem;">Log out</button>
+      </div>
+    </header>
 
-  <div class="chat-messages" id="chatMessages">
-    <div class="chat-welcome" id="welcomeMsg">
-      <h2>Hello!</h2>
-      <p id="welcomeSub">Ask me anything.</p>
+    <!-- Model selector bar -->
+    <div class="model-bar">
+      <label>Models:</label>
+      <div class="model-checkboxes" id="modelCheckboxes">
+        <span style="color:#9ca3af;font-size:0.85rem;">Loading models…</span>
+      </div>
     </div>
+
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-welcome" id="welcomeMsg">
+        <h2>Hello!</h2>
+        <p id="welcomeSub">Ask me anything.</p>
+      </div>
+    </div>
+
+    <div class="chat-input-area">
+      <div class="chat-input-inner">
+        <textarea
+          id="chatInput"
+          rows="1"
+          placeholder="Ask anything…"
+        ></textarea>
+        <button class="chat-send-btn" id="sendBtn">Send</button>
+      </div>
+    </div>
+
   </div>
-
-  <div class="chat-input-area">
-    <div class="chat-input-inner">
-      <textarea
-        id="chatInput"
-        rows="1"
-        placeholder="Ask anything…"
-      ></textarea>
-      <button class="chat-send-btn" id="sendBtn">Send</button>
-    </div>
   </div>
 
   <script>
+    // ── State ────────────────────────────────────────────────
+    let currentChatId = null;
+    let availableModels = [];   // [{ id, label }]
+    let selectedModels = new Set();
+
     // ── Session guard ────────────────────────────────────────
-    let currentChatId = null; 
     (async () => {
       try {
         const res  = await fetch("/api/auth/me");
         const data = await res.json();
-
         if (data.user) {
-          // Badge shows email, welcome message shows username
           document.getElementById("userBadge").textContent = data.user.email;
           document.getElementById("welcomeSub").textContent =
             `Signed in as ${data.user.username}. Ask me anything.`;
@@ -97,160 +193,280 @@
         sendMessage();
       }
     });
-
     document.getElementById("sendBtn").addEventListener("click", sendMessage);
 
-    // ── Message rendering ────────────────────────────────────
+    // ── Load available models ────────────────────────────────
+    async function loadModels() {
+      try {
+        const res  = await fetch("/api/llm/models");
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error);
+        availableModels = data.models;
+        renderModelBar();
+      } catch (e) {
+        document.getElementById("modelCheckboxes").innerHTML =
+          `<span style="color:#b91c1c;font-size:0.85rem;">Could not load models: ${e.message}</span>`;
+      }
+    }
+
+    function renderModelBar() {
+      const container = document.getElementById("modelCheckboxes");
+      container.innerHTML = "";
+
+      availableModels.forEach((m) => {
+        const lbl = document.createElement("label");
+        lbl.className = "model-checkbox-item";
+
+        const cb    = document.createElement("input");
+        cb.type     = "checkbox";
+        cb.value    = m.id;
+        cb.checked  = true;
+        selectedModels.add(m.id);
+
+        cb.addEventListener("change", () => {
+          if (cb.checked) selectedModels.add(m.id);
+          else            selectedModels.delete(m.id);
+        });
+
+        lbl.appendChild(cb);
+        lbl.appendChild(document.createTextNode(m.label));
+        container.appendChild(lbl);
+      });
+    }
+
+    // ── Utility ──────────────────────────────────────────────
+    function escapeHtml(str) {
+      if (!str) return "";
+      return str
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    function removeWelcome() {
+      const w = document.getElementById("welcomeMsg");
+      if (w) w.remove();
+    }
+
+    // ── Append a plain single-bubble message ─────────────────
     function appendMessage(role, text) {
-      const welcome = document.getElementById("welcomeMsg");
-      if (welcome) welcome.remove();
-
-      const container = document.getElementById("chatMessages");
-      const msg       = document.createElement("div");
-      msg.className   = `message ${role}`;
-
+      removeWelcome();
+      const container    = document.getElementById("chatMessages");
+      const msg          = document.createElement("div");
+      msg.className      = `message ${role}`;
       const bubble       = document.createElement("div");
       bubble.className   = "message-bubble";
       bubble.textContent = text;
-
       msg.appendChild(bubble);
       container.appendChild(msg);
       container.scrollTop = container.scrollHeight;
     }
 
-    // ── Send message ─────────────────────────────────────────
-    async function sendMessage() {
-  const text = chatInput.value.trim();
-  const sendBtn = document.getElementById("sendBtn");
+    // ── Append a group of model response cards ───────────────
+    function appendModelGroup(responses) {
+      removeWelcome();
+      const container = document.getElementById("chatMessages");
+      const group     = document.createElement("div");
+      group.className = "model-response-group";
 
-  if (!text) return;
+      responses.forEach((r) => {
+        const label = availableModels.find((m) => m.id === r.modelId)?.label
+          || r.modelId || "Assistant";
 
-  // Show user message immediately
-  appendMessage("user", text);
-
-  chatInput.value = "";
-  chatInput.style.height = "auto";
-  sendBtn.disabled = true;
-
-  try {
-    // Create chat if it doesn't exist yet
-    if (!currentChatId) {
-      const res = await fetch("/api/chats", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: text.substring(0, 25)
-        })
+        const card = document.createElement("div");
+        card.className = r.error ? "model-card error-card" : "model-card";
+        card.innerHTML = `
+          <div class="model-card-header">${escapeHtml(label)}</div>
+          <div class="model-card-body">${escapeHtml(r.error || r.text)}</div>
+        `;
+        group.appendChild(card);
       });
 
-      const data = await res.json();
-      currentChatId = data.chatId;
-
-      loadChats(); // refresh sidebar 
+      container.appendChild(group);
+      container.scrollTop = container.scrollHeight;
+      return group;
     }
 
-    // Save user message
-    await fetch(`/api/chats/${currentChatId}/messages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        role: "user",
-        message: text
-      })
-    });
+    // ── Build loading placeholder cards ──────────────────────
+    function appendLoadingGroup(modelIds) {
+      removeWelcome();
+      const container = document.getElementById("chatMessages");
+      const group     = document.createElement("div");
+      group.className = "model-response-group";
 
-    // Fake assistant reply (for now)
-    const reply = "LLM inference is not yet connected.";
+      modelIds.forEach((id) => {
+        const label = availableModels.find((m) => m.id === id)?.label || id;
+        const card  = document.createElement("div");
+        card.className = "model-card loading-card";
+        card.innerHTML = `
+          <div class="model-card-header">${escapeHtml(label)}</div>
+          <div class="model-card-body">Thinking…</div>
+        `;
+        group.appendChild(card);
+      });
 
-    appendMessage("assistant", reply);
+      container.appendChild(group);
+      container.scrollTop = container.scrollHeight;
+      return group;
+    }
 
-    // Save assistant message
-    await fetch(`/api/chats/${currentChatId}/messages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        role: "assistant",
-        message: reply
-      })
-    });
+    // ── Send message ─────────────────────────────────────────
+    async function sendMessage() {
+      const text    = chatInput.value.trim();
+      const sendBtn = document.getElementById("sendBtn");
+      if (!text) return;
 
-  } catch (err) {
-    console.error(err);
-    appendMessage("assistant", "Error sending message.");
-  }
+      const chosenModels = [...selectedModels];
+      if (chosenModels.length === 0) {
+        alert("Please select at least one model.");
+        return;
+      }
 
-  sendBtn.disabled = false;
-}
+      appendMessage("user", text);
+      chatInput.value = "";
+      chatInput.style.height = "auto";
+      sendBtn.disabled = true;
 
-    // ── Fetch Chat History ─────────────────────────────────────────
+      // Auto-create chat on first message (preserves your existing behaviour)
+      if (!currentChatId) {
+        try {
+          const res  = await fetch("/api/chats", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({ title: text.substring(0, 25) }),
+          });
+          const data = await res.json();
+          currentChatId = data.chatId;  // your backend returns { chatId }
+          loadChats();
+        } catch (err) {
+          console.error("Failed to create chat:", err);
+          appendMessage("assistant", "Error creating chat session.");
+          sendBtn.disabled = false;
+          return;
+        }
+      }
+
+      // Show loading cards while waiting for LLM responses
+      const loadingGroup = appendLoadingGroup(chosenModels);
+
+      try {
+        const res  = await fetch("/api/llm/query", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({
+            chatId:      currentChatId,
+            modelIds:    chosenModels,
+            userMessage: text,
+          }),
+        });
+        const data = await res.json();
+
+        loadingGroup.remove();
+        if (data.success) {
+          appendModelGroup(data.responses);
+        } else {
+          appendMessage("assistant", `Error: ${data.error}`);
+        }
+      } catch (err) {
+        console.error(err);
+        loadingGroup.remove();
+        appendMessage("assistant", "Error sending message.");
+      }
+
+      sendBtn.disabled = false;
+    }
+
+    // ── Load chat list in sidebar ─────────────────────────────
     async function loadChats() {
-  try {
-    const res = await fetch("/api/chats");
-    const chats = await res.json();
+      try {
+        const res   = await fetch("/api/chats");
+        const chats = await res.json();  // plain array
 
-    const chatList = document.getElementById("chatList");
-    chatList.innerHTML = "";
+        const chatList = document.getElementById("chatList");
+        chatList.innerHTML = "";
 
-    chats.forEach(chat => {
-      const item = document.createElement("div");
-      item.className = "chat-item";
-      item.textContent = chat.title || "New Chat";
+        chats.forEach((chat) => {
+          const item       = document.createElement("div");
+          item.className   = "chat-item";
+          item.textContent = chat.title || "New Chat";
+          item.onclick     = () => loadMessages(chat.id);
+          chatList.appendChild(item);
+        });
+      } catch (err) {
+        console.error("Failed to load chats");
+      }
+    }
 
-      item.onclick = () => loadMessages(chat.id);
-
-      chatList.appendChild(item);
-    });
-  } catch (err) {
-    console.error("Failed to load chats");
-  }
-}
-
-    // ── Load Chats ─────────────────────────────────────────
+    // ── Load messages for a chat ──────────────────────────────
     async function loadMessages(chatId) {
       currentChatId = chatId;
-      
-  const res = await fetch(`/api/chats/${chatId}/messages`);
-  const messages = await res.json();
 
-  const container = document.getElementById("chatMessages");
-  container.innerHTML = "";
+      const res      = await fetch(`/api/chats/${chatId}/messages`);
+      const messages = await res.json();  // plain array
 
-  messages.forEach(m => {
-    appendMessage(m.role, m.message);
-  });
-}
+      const container = document.getElementById("chatMessages");
+      container.innerHTML = "";
 
-    // ── Search Chats ─────────────────────────────────────────
+      // Walk through messages and group consecutive assistant messages
+      // (one per model) into card groups, user messages as plain bubbles.
+      let i = 0;
+      while (i < messages.length) {
+        const m = messages[i];
+
+        if (m.role === "user") {
+          appendMessage("user", m.message);
+          i++;
+        } else {
+          // Collect the full run of consecutive assistant messages
+          const group = [];
+          while (i < messages.length && messages[i].role === "assistant") {
+            group.push(messages[i]);
+            i++;
+          }
+
+          if (group.length === 1 && !group[0].model_name) {
+            // Legacy message stored before this iteration — plain bubble
+            appendMessage("assistant", group[0].message);
+          } else {
+            appendModelGroup(
+              group.map((msg) => ({
+                modelId: msg.model_name,
+                text:    msg.message,
+                error:   null,
+              }))
+            );
+          }
+        }
+      }
+    }
+
+    // ── Search chats ──────────────────────────────────────────
     const searchInput = document.getElementById("chatSearch");
+    searchInput.addEventListener("input", async () => {
+      const query = searchInput.value.trim();
 
-searchInput.addEventListener("input", async () => {
-  const query = searchInput.value.trim();
+      if (!query) {
+        loadChats();
+        return;
+      }
 
-  if (!query) {
-    loadChats(); // reload all chats
-    return;
-  }
-  
-  const res = await fetch(`/api/chats/search?q=${encodeURIComponent(query)}`);
-  const chats = await res.json();
+      const res   = await fetch(`/api/chats/search?q=${encodeURIComponent(query)}`);
+      const chats = await res.json();  // plain array
 
-  const chatList = document.getElementById("chatList");
-  chatList.innerHTML = "";
+      const chatList = document.getElementById("chatList");
+      chatList.innerHTML = "";
 
-  chats.forEach(chat => {
-    const item = document.createElement("div");
-    item.className = "chat-item";
-    item.textContent = chat.title || "New Chat";
+      chats.forEach((chat) => {
+        const item       = document.createElement("div");
+        item.className   = "chat-item";
+        item.textContent = chat.title || "New Chat";
+        item.onclick     = () => loadMessages(chat.id);
+        chatList.appendChild(item);
+      });
+    });
 
-    item.onclick = () => loadMessages(chat.id);
-
-    chatList.appendChild(item);
-  });
-});
-   loadChats();
-    
+    // ── Init ──────────────────────────────────────────────────
+    loadModels();
+    loadChats();
   </script>
-  </div>
-</div>
 </body>
 </html>
