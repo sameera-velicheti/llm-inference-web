@@ -29,7 +29,7 @@ async function listModels(req, res) {
  */
 async function queryLLMs(req, res) {
   const { chatId, modelIds, userMessage } = req.body;
-  const userId = req.session?.userId;
+  const userId = req.session?.user?.id;
 
   // --- Validation ---
   if (!chatId || !userMessage || !Array.isArray(modelIds) || modelIds.length === 0) {
