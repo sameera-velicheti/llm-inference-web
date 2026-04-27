@@ -72,8 +72,7 @@ node testing/puppeteer/multi-model-chat.js
 #   Step 4 — sending a message produces model response cards
 #   Step 5 — response cards appear grouped together in one turn
 #   Step 6 — deselecting a model excludes it from the next response
-#   Step 7 — reloading the page preserves model names in chat history
-#   Step 8 — searching finds the chat by message content
+#   Step 7 — searching finds the chat by message content
 ```
 
 ---
@@ -85,4 +84,4 @@ node testing/puppeteer/multi-model-chat.js
 - `register.js` will fail with a timeout if the account already exists. That is expected behavior.
 - `login.js` uses `password123`. After running `reset-password.js`, login.js will fail because the password has changed. That is also expected.
 - `multi-model-chat.js` depends on the account from `register.js` existing and the password still being `password123`. Run it **before** `reset-password.js`, or update the credentials in the script to match the new password.
-- Steps 4–8 in `multi-model-chat.js` depend on the vLLM server being reachable. If it is not connected yet (placeholder responses only), Steps 4–5 will still pass as long as the backend returns a valid response — the cards will just show the placeholder text.
+- Steps 4–7 in `multi-model-chat.js` depend on the vLLM server being reachable. If it is not connected yet (placeholder responses only), Steps 4–5 will still pass as long as the backend returns a valid response — the cards will just show the placeholder text.
