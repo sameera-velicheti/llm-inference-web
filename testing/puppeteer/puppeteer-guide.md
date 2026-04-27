@@ -6,7 +6,8 @@
 **Terminal 1 — start the server:**
 ```bash
 rmdir /s llm-inference-web
-git clone https://github.com/sameera-velicheti/llm-inference-web.git
+git clone -b ethan-individual-iteration --single-branch https://github.com/sameera-velicheti/llm-inference-web.git
+
 cd llm-inference-web
 npm install
 node backend/server.js
