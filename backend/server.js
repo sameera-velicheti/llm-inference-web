@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 // import the express app
 const app = require("./src/app");
 
