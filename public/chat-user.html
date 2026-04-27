@@ -109,20 +109,33 @@
     }
 
     /* ── Redirect link (User Story 3) ── */
-    .redirect-link {
-      font-size: 0.7rem;
-      color: #4f46e5;
-      text-decoration: none;
-      border: 1px solid #c7d2fe;
-      border-radius: 4px;
-      padding: 0.1rem 0.45rem;
-      line-height: 1.4;
-      white-space: nowrap;
-      transition: background 0.15s;
-    }
-    .redirect-link:hover {
-      background: #eef2ff;
-    }
+.redirect-link {
+  font-size: 0.7rem;
+  color: #4f46e5;
+  background: #ffffff;
+  border: 1px solid #c7d2fe;
+  border-radius: 4px;
+  padding: 0.1rem 0.45rem;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.redirect-link:hover {
+  background: #eef2ff;
+  color: #3730a3;
+  border-color: #a5b4fc;
+}
+
+.redirect-link:active {
+  transform: scale(0.98);
+}
+
+.redirect-link:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+}
 
     /* ── Card body ── */
     .model-card-body {
