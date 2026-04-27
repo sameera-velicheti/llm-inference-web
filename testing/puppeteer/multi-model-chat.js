@@ -9,7 +9,7 @@ const puppeteer = require("puppeteer");
   const browser = await puppeteer.launch({
     headless: false,
     slowMo: 50,
-    args: ["--start-maximized"],
+    args: ["--start-fullscreen"],
     defaultViewport: null
   });
   const page = await browser.newPage();
