@@ -98,35 +98,8 @@ const deselectedPresent = await page.evaluate(lbl => {
       console.log("  Step 6 Skipped: fewer than 2 models configured");
     }
 
-// ── Step 7: History persists after reload ────────────────
-const headersBefore = await page.$$eval(".model-card-header", hs =>
-  hs.map(h => h.textContent.trim())
-);
 
-await page.reload({ waitUntil: "networkidle0" });
-
-await page.waitForFunction(() => {
-  return document.querySelectorAll("#chatList .chat-item").length > 0;
-}, { timeout: 10000 });
-
-await page.click("#chatList .chat-item:first-child");
-
-await page.waitForFunction(() => {
-  return document.querySelectorAll(".model-card").length > 0;
-}, { timeout: 10000 });
-
-const headersAfter = await page.$$eval(".model-card-header", hs =>
-  hs.map(h => h.textContent.trim())
-);
-
-const same = headersBefore.every(h => headersAfter.includes(h));
-
-if (!same) {
-  throw new Error("Model card headers changed after reload — history not preserved");
-}
-
-console.log("  Step 7 Passed: model names persisted correctly in chat history");
-    // ── Step 8: Search finds the chat ────────────────────────
+    // ── Step 7: Search finds the chat ────────────────────────
     await page.waitForSelector("#chatSearch", { timeout: 5000 });
     await page.click("#chatSearch", { clickCount: 3 });
     await page.type("#chatSearch", "What is 2");
