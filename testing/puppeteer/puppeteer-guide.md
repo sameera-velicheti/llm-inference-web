@@ -47,11 +47,11 @@ node testing/puppeteer/forgot-password.js
 node testing/puppeteer/reset-password.js
 # Expected: password reset confirmed
 
-# 6. Try logging in with the OLD password — this will fail (expected)
+# 6. Try logging in with the OLD password (this will fail but it is expected in order to showcase that old password no longer works)
 node testing/puppeteer/login.js
 # Expected: "Login Test Failed" — password was changed in step 5
 
-# 7. Try registering again — this will fail (expected)
+# 7. Try registering again (this will fail but it is expected to showcase that trying to register with an email that already exists in the db will not work)
 node testing/puppeteer/register.js
 # Expected: timeout — account already exists
 
