@@ -2,7 +2,7 @@
 // Business logic for LLM-related endpoints.
 
 const { getAvailableModels, queryModels } = require("../models/llmModel");
-const { getChatMessages, addMessage } = require("../models/chatModel");
+const { getMessages, addMessage } = require("../models/chatModel");
 
 /**
  * GET /api/llm/models
@@ -62,7 +62,7 @@ async function queryLLMs(req, res) {
 
   try {
     // Build conversation history for context
-    const history = getChatMessages(chatId);
+    const history = getMessages(chatId);
     const contextMessages = history.map((row) => ({
       role: row.role === "user" ? "user" : "assistant",
       content: row.message,
