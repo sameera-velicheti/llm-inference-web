@@ -83,10 +83,14 @@ const puppeteer = require("puppeteer");
         { timeout: 30000 }
       );
 
-      const deselectedPresent = await page.evaluate(lbl => {
-        return [...document.querySelectorAll(".model-card-header")]
-          .some(h => h.textContent.trim().toUpperCase() === lbl.toUpperCase());
-      }, lastLabel);
+const deselectedPresent = await page.evaluate(lbl => {
+  const groups = document.querySelectorAll(".model-response-group");
+  const latestGroup = groups[groups.length - 1];
+  if (!latestGroup) return false;
+
+  return [...latestGroup.querySelectorAll(".model-card-header")]
+    .some(h => h.textContent.trim().toUpperCase() === lbl.toUpperCase());
+}, lastLabel);
 
       if (deselectedPresent) throw new Error(`Deselected model "${lastLabel}" still appeared`);
       console.log(`  Step 6 Passed: deselected model "${lastLabel}" correctly excluded`);
