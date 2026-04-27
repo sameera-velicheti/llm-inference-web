@@ -103,7 +103,10 @@ const deselectedPresent = await page.evaluate(lbl => {
     await page.waitForSelector("#chatSearch", { timeout: 5000 });
     await page.click("#chatSearch", { clickCount: 3 });
     await page.type("#chatSearch", "What is 2");
-    await page.waitForTimeout(400);
+await page.waitForFunction(
+  () => document.querySelectorAll("#chatList div").length > 0,
+  { timeout: 5000 }
+);
 
     const searchResultCount = await page.$$eval("#chatList div", els => els.length);
     if (searchResultCount === 0) throw new Error("Search returned no results");
