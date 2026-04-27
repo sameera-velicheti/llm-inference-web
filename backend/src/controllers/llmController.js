@@ -1,8 +1,8 @@
 // backend/src/controllers/llmController.js
 // Business logic for LLM-related endpoints.
 
-const { getAvailableModels, queryModels } = require("../models/llmModel");
-const { getMessages, addMessage } = require("../models/chatModel");
+const llmModel  = require("../models/llmModel");
+const chatModel = require("../models/chatModel");
 
 /**
  * GET /api/llm/models
@@ -10,7 +10,7 @@ const { getMessages, addMessage } = require("../models/chatModel");
  */
 async function listModels(req, res) {
   try {
-    const models = getAvailableModels();
+    const models = llmModel.getAvailableModels();
     return res.status(200).json({ success: true, models });
   } catch (err) {
     return res.status(500).json({ success: false, error: "Failed to retrieve model list." });
@@ -51,8 +51,8 @@ async function queryLLMs(req, res) {
     });
   }
 
-  const available = getAvailableModels().map((m) => m.id);
-  const invalid = modelIds.filter((id) => !available.includes(id));
+  const available = llmModel.getAvailableModels().map((m) => m.id);
+  const invalid   = modelIds.filter((id) => !available.includes(id));
   if (invalid.length > 0) {
     return res.status(400).json({
       success: false,
@@ -62,23 +62,23 @@ async function queryLLMs(req, res) {
 
   try {
     // Build conversation history for context
-    const history = getMessages(chatId);
+    const history        = chatModel.getMessages(chatId);
     const contextMessages = history.map((row) => ({
-      role: row.role === "user" ? "user" : "assistant",
+      role:    row.role === "user" ? "user" : "assistant",
       content: row.message,
     }));
     contextMessages.push({ role: "user", content: userMessage.trim() });
 
     // Persist the user message
-    addMessage(chatId, "user", userMessage.trim(), null);
+    chatModel.addMessage(chatId, "user", userMessage.trim(), null);
 
     // Fan out to all requested models
-    const results = await queryModels(modelIds, contextMessages);
+    const results = await llmModel.queryModels(modelIds, contextMessages);
 
     // Persist each model's response
     for (const result of results) {
       if (result.text) {
-        addMessage(chatId, "assistant", result.text, result.modelId);
+        chatModel.addMessage(chatId, "assistant", result.text, result.modelId);
       }
     }
 
