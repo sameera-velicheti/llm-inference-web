@@ -183,6 +183,7 @@ describe("llmController.queryLLMs", () => {
   });
 
   it("returns 500 when queryModels throws unexpectedly", async () => {
+    spyOn(console, "error");
     llmModel.queryModels.and.returnValue(Promise.reject(new Error("crash")));
     const req = makeReq({ body: VALID_BODY });
     const res = makeRes();
