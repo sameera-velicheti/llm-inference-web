@@ -110,7 +110,7 @@ await page.waitForFunction(
 
     const searchResultCount = await page.$$eval("#chatList div", els => els.length);
     if (searchResultCount === 0) throw new Error("Search returned no results");
-    console.log(`  Step 8 Passed: search returned ${searchResultCount} result(s)`);
+    console.log(`  Step 7 Passed: search returned ${searchResultCount} result(s)`);
 
     console.log("\nMulti-Model Chat Test Passed: all steps completed successfully");
 
