@@ -338,6 +338,15 @@
         const body = card.querySelector(".model-card-body");
         const isExpanded = body.classList.toggle("expanded");
         expandBtn.textContent = isExpanded ? "Collapse" : "Expand";
+      });
+
+      // Redirect link (User Story 3)
+      const redirectLink      = document.createElement("a");
+      redirectLink.className  = "redirect-link";
+      redirectLink.textContent = "Visit";
+      redirectLink.href        = url;
+      redirectLink.target      = "_blank";
+      redirectLink.rel         = "noopener noreferrer";
 
       actions.appendChild(expandBtn);
       actions.appendChild(redirectLink);
