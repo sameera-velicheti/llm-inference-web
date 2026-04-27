@@ -341,12 +341,23 @@
       });
 
       // Redirect link (User Story 3)
-      const redirectLink      = document.createElement("a");
-      redirectLink.className  = "redirect-link";
-      redirectLink.textContent = "Visit";
-      redirectLink.href        = url;
-      redirectLink.target      = "_blank";
-      redirectLink.rel         = "noopener noreferrer";
+const redirectLink = document.createElement("button");
+redirectLink.className = "redirect-link";
+redirectLink.textContent = "Use";
+
+redirectLink.addEventListener("click", () => {
+  // clear all selected models
+  selectedModels.clear();
+
+  // select only this model
+  selectedModels.add(modelId);
+
+  // update all checkboxes visually
+  document.querySelectorAll("#modelCheckboxes input[type='checkbox']")
+    .forEach(cb => {
+      cb.checked = (cb.value === modelId);
+    });
+});
 
       actions.appendChild(expandBtn);
       actions.appendChild(redirectLink);
