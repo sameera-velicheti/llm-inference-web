@@ -29,7 +29,7 @@ const MODEL_CATALOG = [
     id: "gemini",
     label: "Gemini (public API)",
     provider: "gemini",
-    modelName: process.env.GEMINI_MODEL || "gemini-1.5-flash",
+    modelName: process.env.GEMINI_MODEL || "gemini-1.5-flash-latest",
     type: "public"
   },
   {
