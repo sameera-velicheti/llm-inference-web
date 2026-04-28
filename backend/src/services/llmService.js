@@ -72,27 +72,40 @@ function getSystemPrompt(mode = "general") {
 
 async function fetchWeather(location) {
   const apiKey = process.env.OPENWEATHER_API_KEY;
-  if (!apiKey || apiKey === "your-openweathermap-api-key-here") {
-    return null; // key not configured — let LLM handle gracefully
+  if (!apiKey || apiKey === "your-openweathermap-api-key-here" || apiKey === "") {
+    console.warn("[llmService] OPENWEATHER_API_KEY not set in .env");
+    return null;
   }
 
   const url =
     `https://api.openweathermap.org/data/2.5/weather` +
     `?q=${encodeURIComponent(location)}&appid=${apiKey}&units=metric`;
 
-  const res = await fetch(url);
-  if (!res.ok) return null; // location not found or API error
+  console.log(`[llmService] Fetching weather for: "${location}"`);
 
-  const d = await res.json();
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      console.warn(`[llmService] Weather API error ${res.status}:`, err.message || err);
+      return null;
+    }
 
-  return (
-    `[Live weather for ${d.name}, ${d.sys.country}]\n` +
-    `Condition: ${d.weather[0].description}\n` +
-    `Temperature: ${d.main.temp}°C (feels like ${d.main.feels_like}°C)\n` +
-    `Humidity: ${d.main.humidity}%\n` +
-    `Wind: ${d.wind.speed} m/s\n` +
-    `Visibility: ${d.visibility ? d.visibility / 1000 + " km" : "N/A"}`
-  );
+    const d = await res.json();
+    const weatherData =
+      `[Live weather for ${d.name}, ${d.sys.country}]\n` +
+      `Condition: ${d.weather[0].description}\n` +
+      `Temperature: ${d.main.temp}°C (feels like ${d.main.feels_like}°C)\n` +
+      `Humidity: ${d.main.humidity}%\n` +
+      `Wind: ${d.wind.speed} m/s\n` +
+      `Visibility: ${d.visibility ? d.visibility / 1000 + " km" : "N/A"}`;
+
+    console.log(`[llmService] Weather fetched successfully for ${d.name}`);
+    return weatherData;
+  } catch (err) {
+    console.warn("[llmService] Weather fetch failed:", err.message);
+    return null;
+  }
 }
 
 // Very simple location extractor — looks for "in <place>" or "for <place>"
@@ -154,11 +167,16 @@ async function callOllama(prompt, model, mode, history, weatherData) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ model: model.modelName, messages, stream: false }),
-      // 5-second connection timeout so we fail fast if Ollama is not running
-      signal: AbortSignal.timeout(5000)
+      // 120 second timeout — model may need time to reload into RAM after being swapped out
+      signal: AbortSignal.timeout(120000)
     });
   } catch (err) {
-    // Ollama not reachable
+    if (err.name === "TimeoutError") {
+      throw new Error(
+        "Local model timed out. Your machine may not have enough free RAM. " +
+        "Try closing other applications and sending your message again."
+      );
+    }
     throw new Error(
       "Local model unavailable. Please make sure Ollama is running " +
       "(run: ollama serve) and the model is installed (run: ollama pull " +
@@ -167,9 +185,17 @@ async function callOllama(prompt, model, mode, history, weatherData) {
   }
 
   if (!response.ok) {
+    const errBody = await response.json().catch(() => ({}));
+    const errMsg = errBody?.error || `status ${response.status}`;
+    if (errMsg.includes("memory") || response.status === 500) {
+      throw new Error(
+        "Local model unavailable — not enough RAM to load the model. " +
+        "Close other applications to free up memory and try again."
+      );
+    }
     throw new Error(
-      `Local model unavailable. Ollama returned status ${response.status}. ` +
-      `Make sure the model "${model.modelName}" is installed (run: ollama pull ${model.modelName}).`
+      `Local model unavailable. Ollama returned: ${errMsg}. ` +
+      `Make sure "${model.modelName}" is installed (run: ollama pull ${model.modelName}).`
     );
   }
 
@@ -314,8 +340,11 @@ async function generateResponse({ prompt, modelId = "ollama-llama3", mode = "gen
   let weatherData = null;
   if (mode === "weather") {
     const location = extractLocation(prompt);
+    console.log(`[llmService] Weather mode — extracted location: "${location}"`);
     if (location) {
-      weatherData = await fetchWeather(location).catch(() => null);
+      weatherData = await fetchWeather(location);
+    } else {
+      console.warn("[llmService] Could not extract location from prompt:", prompt);
     }
   }
 
