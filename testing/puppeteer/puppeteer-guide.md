@@ -2,7 +2,7 @@ To properly test using puppeteer:
 
 Open Terminal 1:
 ```bash
-rmdir /s llm-inference-web //this is to remove any old cloned files
+rmdir /s /q llm-inference-web //this is to remove any old cloned files
 
 git clone https://github.com/sameera-velicheti/llm-inference-web.git
 
