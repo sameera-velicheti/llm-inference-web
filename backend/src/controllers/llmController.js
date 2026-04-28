@@ -18,14 +18,15 @@ exports.generateChatResponse = async (req, res) => {
       history
     });
 
-    res.json({
-      success: true,
-      ...result
-    });
+    res.json({ success: true, ...result });
+
   } catch (err) {
-    res.status(400).json({
+    // Return a 200 with success:false so the frontend can display the
+    // error message directly in the chat bubble rather than crashing
+    res.status(200).json({
       success: false,
-      error: err.message
+      response: err.message,
+      fallback: true
     });
   }
 };
