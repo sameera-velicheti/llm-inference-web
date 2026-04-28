@@ -1,7 +1,12 @@
 // Load environment variables from .env at project root
-require("dotenv").config({ path: require("path").join(__dirname, "../../../.env") });
+require("dotenv").config({
+  path: require("path").join(__dirname, "../../../.env")
+});
 
-const DEFAULT_OLLAMA_URL = process.env.OLLAMA_URL || "http://localhost:11434";
+const DEFAULT_OLLAMA_URL =
+  process.env.OLLAMA_URL || "http://localhost:11434";
+
+// ── Model Catalog ────────────────────────────────────────────────────────────
 
 const MODEL_CATALOG = [
   {
@@ -12,22 +17,22 @@ const MODEL_CATALOG = [
     type: "local"
   },
   {
-    id: "gpt",
-    label: "GPT (public API)",
-    provider: "openai",
-    modelName: process.env.OPENAI_MODEL || "gpt-4o-mini",
+    id: "groq",
+    label: "Groq (public API)",
+    provider: "groq",
+    modelName: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
     type: "public"
   },
   {
     id: "gemini",
     label: "Gemini (public API)",
     provider: "gemini",
-    modelName: process.env.GEMINI_MODEL || "gemini-2.0-flash",
+    modelName: process.env.GEMINI_MODEL || "gemini-2.5-flash",
     type: "public"
   }
 ];
 
-// ── Model helpers ─────────────────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
 function getAvailableModels() {
   return MODEL_CATALOG.map(({ id, label, provider, type }) => ({
@@ -42,84 +47,75 @@ function findModel(modelId) {
   return MODEL_CATALOG.find((m) => m.id === modelId) || MODEL_CATALOG[0];
 }
 
-// ── System prompts ────────────────────────────────────────────────────────────
+// ── System Prompts ───────────────────────────────────────────────────────────
 
 function getSystemPrompt(mode = "general") {
   if (mode === "math") {
     return (
-      "You are a math-focused assistant. Always show your reasoning step by step. " +
-      "Use clear notation, break down complex problems into smaller parts, and " +
-      "verify your answers where possible. If a question is not mathematical, " +
-      "answer helpfully but note that math mode is active."
+      "You are a math-focused assistant. Always show reasoning step-by-step. " +
+      "Use clear notation and verify answers when possible."
     );
   }
 
   if (mode === "weather") {
     return (
-      "You are a weather assistant. You will be given real-time weather data " +
-      "fetched from OpenWeatherMap at the top of the user message. " +
-      "Summarise the conditions clearly and helpfully — include temperature, " +
-      "feels-like, humidity, wind, and a short description. " +
-      "If no weather data is present, tell the user you could not find weather " +
-      "for their location and ask them to be more specific."
+      "You are a weather assistant. You will receive real-time weather data " +
+      "inside the prompt. Summarize clearly including temperature, feels-like, " +
+      "humidity, wind, and conditions."
     );
   }
 
   return "You are a helpful assistant for an LLM web interface.";
 }
 
-// ── Weather helper (OpenWeatherMap) ──────────────────────────────────────────
+// ── Weather Helper ───────────────────────────────────────────────────────────
 
 async function fetchWeather(location) {
   const apiKey = process.env.OPENWEATHER_API_KEY;
-  if (!apiKey || apiKey === "your-openweathermap-api-key-here" || apiKey === "") {
-    console.warn("[llmService] OPENWEATHER_API_KEY not set in .env");
+
+  if (
+    !apiKey ||
+    apiKey === "your-openweathermap-api-key-here"
+  ) {
     return null;
   }
 
   const url =
-    `https://api.openweathermap.org/data/2.5/weather` +
-    `?q=${encodeURIComponent(location)}&appid=${apiKey}&units=metric`;
-
-  console.log(`[llmService] Fetching weather for: "${location}"`);
+    `https://api.openweathermap.org/data/2.5/weather?q=` +
+    `${encodeURIComponent(location)}&appid=${apiKey}&units=metric`;
 
   try {
     const res = await fetch(url);
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      console.warn(`[llmService] Weather API error ${res.status}:`, err.message || err);
-      return null;
-    }
+
+    if (!res.ok) return null;
 
     const d = await res.json();
-    const weatherData =
+
+    return (
       `[Live weather for ${d.name}, ${d.sys.country}]\n` +
       `Condition: ${d.weather[0].description}\n` +
       `Temperature: ${d.main.temp}°C (feels like ${d.main.feels_like}°C)\n` +
       `Humidity: ${d.main.humidity}%\n` +
-      `Wind: ${d.wind.speed} m/s\n` +
-      `Visibility: ${d.visibility ? d.visibility / 1000 + " km" : "N/A"}`;
-
-    console.log(`[llmService] Weather fetched successfully for ${d.name}`);
-    return weatherData;
-  } catch (err) {
-    console.warn("[llmService] Weather fetch failed:", err.message);
+      `Wind: ${d.wind.speed} m/s`
+    );
+  } catch {
     return null;
   }
 }
 
-// Very simple location extractor — looks for "in <place>" or "for <place>"
 function extractLocation(prompt) {
   const match = prompt.match(
     /(?:weather\s+(?:in|for|at)|in|for|at)\s+([A-Za-z\s,]+?)(?:\?|$|,|\.|!)/i
   );
+
   return match ? match[1].trim() : null;
 }
 
-// ── History normaliser ────────────────────────────────────────────────────────
+// ── History ──────────────────────────────────────────────────────────────────
 
 function normalizeHistory(history = []) {
   if (!Array.isArray(history)) return [];
+
   return history
     .filter((m) => m && m.role && m.message)
     .slice(-10)
@@ -129,10 +125,14 @@ function normalizeHistory(history = []) {
     }));
 }
 
-// ── Message builder ───────────────────────────────────────────────────────────
+// ── Message Builder ──────────────────────────────────────────────────────────
 
-function buildMessages(prompt, history = [], mode = "general", weatherData = null) {
-  // Prepend live weather data to the user prompt when in weather mode
+function buildMessages(
+  prompt,
+  history = [],
+  mode = "general",
+  weatherData = null
+) {
   const userContent =
     mode === "weather" && weatherData
       ? `${weatherData}\n\nUser question: ${prompt}`
@@ -145,97 +145,107 @@ function buildMessages(prompt, history = [], mode = "general", weatherData = nul
   ];
 }
 
-// ── Demo / fallback ───────────────────────────────────────────────────────────
+// ── Demo Fallback ────────────────────────────────────────────────────────────
 
 function buildDemoResponse(prompt, model, mode) {
-  const modeText = mode === "general" ? "general" : `${mode}-focused`;
   return (
-    `[Demo] ${model.label} (${modeText} mode): ` +
+    `[Demo] ${model.label} (${mode} mode): ` +
     `This is a placeholder response for "${prompt}". ` +
-    `Configure the relevant API key in your .env file to enable real responses.`
+    `Add your API key in .env to enable real responses.`
   );
 }
 
-// ── Provider calls ────────────────────────────────────────────────────────────
+// ── Ollama ───────────────────────────────────────────────────────────────────
 
 async function callOllama(prompt, model, mode, history, weatherData) {
-  const messages = buildMessages(prompt, history, mode, weatherData);
+  const messages = buildMessages(
+    prompt,
+    history,
+    mode,
+    weatherData
+  );
 
-  let response;
-  try {
-    response = await fetch(`${DEFAULT_OLLAMA_URL}/api/chat`, {
+  const response = await fetch(
+    `${DEFAULT_OLLAMA_URL}/api/chat`,
+    {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model: model.modelName, messages, stream: false }),
-      // 120 second timeout — model may need time to reload into RAM after being swapped out
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: model.modelName,
+        messages,
+        stream: false
+      }),
       signal: AbortSignal.timeout(120000)
-    });
-  } catch (err) {
-    if (err.name === "TimeoutError") {
-      throw new Error(
-        "Local model timed out. Your machine may not have enough free RAM. " +
-        "Try closing other applications and sending your message again."
-      );
     }
-    throw new Error(
-      "Local model unavailable. Please make sure Ollama is running " +
-      "(run: ollama serve) and the model is installed (run: ollama pull " +
-      model.modelName + ")."
-    );
-  }
+  );
 
   if (!response.ok) {
-    const errBody = await response.json().catch(() => ({}));
-    const errMsg = errBody?.error || `status ${response.status}`;
-    if (errMsg.includes("memory") || response.status === 500) {
-      throw new Error(
-        "Local model unavailable — not enough RAM to load the model. " +
-        "Close other applications to free up memory and try again."
-      );
-    }
-    throw new Error(
-      `Local model unavailable. Ollama returned: ${errMsg}. ` +
-      `Make sure "${model.modelName}" is installed (run: ollama pull ${model.modelName}).`
-    );
+    throw new Error("Ollama unavailable.");
   }
 
   const data = await response.json();
-  return data.message?.content || buildDemoResponse(prompt, model, mode);
+
+  return (
+    data.message?.content ||
+    buildDemoResponse(prompt, model, mode)
+  );
 }
 
-async function callOpenAI(prompt, model, mode, history, weatherData) {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey || apiKey === "your-openai-api-key-here") {
+// ── Groq ─────────────────────────────────────────────────────────────────────
+
+async function callGroq(prompt, model, mode, history, weatherData) {
+  const apiKey = process.env.GROQ_API_KEY;
+
+  if (!apiKey || apiKey === "your-groq-api-key-here") {
     return buildDemoResponse(prompt, model, mode);
   }
 
-  const messages = buildMessages(prompt, history, mode, weatherData);
+  const messages = buildMessages(
+    prompt,
+    history,
+    mode,
+    weatherData
+  );
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: model.modelName,
-      messages,
-      max_tokens: 1024,
-      temperature: mode === "math" ? 0.2 : 0.7
-    })
-  });
+  const response = await fetch(
+    "https://api.groq.com/openai/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: model.modelName,
+        messages,
+        max_tokens: 1024,
+        temperature: mode === "math" ? 0.2 : 0.7
+      })
+    }
+  );
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    throw new Error(`OpenAI error: ${err.error?.message || response.status}`);
+    throw new Error(
+      `Groq error: ${err.error?.message || response.status}`
+    );
   }
 
   const data = await response.json();
-  return data.choices?.[0]?.message?.content || buildDemoResponse(prompt, model, mode);
+
+  return (
+    data.choices?.[0]?.message?.content ||
+    buildDemoResponse(prompt, model, mode)
+  );
 }
+
+// ── Gemini ───────────────────────────────────────────────────────────────────
 
 async function callGemini(prompt, model, mode, history, weatherData) {
   const apiKey = process.env.GEMINI_API_KEY;
+
   if (!apiKey || apiKey === "your-gemini-api-key-here") {
     return buildDemoResponse(prompt, model, mode);
   }
@@ -245,14 +255,15 @@ async function callGemini(prompt, model, mode, history, weatherData) {
       ? `${weatherData}\n\nUser question: ${prompt}`
       : prompt;
 
-  // Build contents from history + current message
-  // Note: Gemini v1beta only supports "user" and "model" roles
   const contents = [
     ...normalizeHistory(history).map((m) => ({
       role: m.role === "assistant" ? "model" : "user",
       parts: [{ text: m.content }]
     })),
-    { role: "user", parts: [{ text: userContent }] }
+    {
+      role: "user",
+      parts: [{ text: userContent }]
+    }
   ];
 
   const url =
@@ -261,9 +272,10 @@ async function callGemini(prompt, model, mode, history, weatherData) {
 
   const response = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json"
+    },
     body: JSON.stringify({
-      // system_instruction is a separate top-level field in Gemini API
       system_instruction: {
         parts: [{ text: getSystemPrompt(mode) }]
       },
@@ -276,75 +288,38 @@ async function callGemini(prompt, model, mode, history, weatherData) {
   });
 
   if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(`Gemini error: ${err.error?.message || response.status}`);
+    throw new Error("Gemini error.");
   }
 
   const data = await response.json();
+
   return (
     data.candidates?.[0]?.content?.parts?.[0]?.text ||
     buildDemoResponse(prompt, model, mode)
   );
 }
 
-async function callClaude(prompt, model, mode, history, weatherData) {
-  const apiKey = process.env.CLAUDE_API_KEY;
-  if (!apiKey || apiKey === "your-claude-api-key-here") {
-    return buildDemoResponse(prompt, model, mode);
-  }
+// ── Main Generator ───────────────────────────────────────────────────────────
 
-  const userContent =
-    mode === "weather" && weatherData
-      ? `${weatherData}\n\nUser question: ${prompt}`
-      : prompt;
-
-  const messages = [
-    ...normalizeHistory(history),
-    { role: "user", content: userContent }
-  ];
-
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01"
-    },
-    body: JSON.stringify({
-      model: model.modelName,
-      system: getSystemPrompt(mode),
-      messages,
-      max_tokens: 1024
-    })
-  });
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(`Claude error: ${err.error?.message || response.status}`);
-  }
-
-  const data = await response.json();
-  return data.content?.[0]?.text || buildDemoResponse(prompt, model, mode);
-}
-
-// ── Main entry point ──────────────────────────────────────────────────────────
-
-async function generateResponse({ prompt, modelId = "ollama-llama3", mode = "general", history = [] }) {
-  if (!prompt || !prompt.trim()) {
-    throw new Error("Prompt is required");
+async function generateResponse({
+  prompt,
+  modelId = "groq",
+  mode = "general",
+  history = []
+}) {
+  if (!prompt?.trim()) {
+    throw new Error("Prompt is required.");
   }
 
   const model = findModel(modelId);
 
-  // For weather mode, try to fetch live data before calling the LLM
   let weatherData = null;
+
   if (mode === "weather") {
     const location = extractLocation(prompt);
-    console.log(`[llmService] Weather mode — extracted location: "${location}"`);
+
     if (location) {
       weatherData = await fetchWeather(location);
-    } else {
-      console.warn("[llmService] Could not extract location from prompt:", prompt);
     }
   }
 
@@ -352,27 +327,43 @@ async function generateResponse({ prompt, modelId = "ollama-llama3", mode = "gen
     let text;
 
     if (model.provider === "ollama") {
-      // callOllama throws a user-friendly error if unreachable — let it propagate
-      text = await callOllama(prompt, model, mode, history, weatherData);
-    } else if (model.provider === "openai") {
-      text = await callOpenAI(prompt, model, mode, history, weatherData);
+      text = await callOllama(
+        prompt,
+        model,
+        mode,
+        history,
+        weatherData
+      );
+    } else if (model.provider === "groq") {
+      text = await callGroq(
+        prompt,
+        model,
+        mode,
+        history,
+        weatherData
+      );
     } else if (model.provider === "gemini") {
-      text = await callGemini(prompt, model, mode, history, weatherData);
-    } else if (model.provider === "anthropic") {
-      text = await callClaude(prompt, model, mode, history, weatherData);
+      text = await callGemini(
+        prompt,
+        model,
+        mode,
+        history,
+        weatherData
+      );
     } else {
       text = buildDemoResponse(prompt, model, mode);
     }
 
-    return { model: model.label, modelId: model.id, mode, response: text, fallback: false };
-
+    return {
+      model: model.label,
+      modelId: model.id,
+      mode,
+      response: text,
+      fallback: false
+    };
   } catch (err) {
-    // For local models re-throw so the user sees the real error in chat
-    if (model.provider === "ollama") {
-      throw err;
-    }
-    // For public models fall back to demo + log the real error
-    console.error(`[llmService] ${model.label} error:`, err.message);
+    console.error(err.message);
+
     return {
       model: model.label,
       modelId: model.id,
