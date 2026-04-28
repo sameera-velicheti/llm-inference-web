@@ -14,7 +14,8 @@ ollama pull llama3.2:1b
 ```
 Open Terminal 3:
 ```bash
-rmdir /s /q llm-inference-web //this is to remove any old cloned files
+ //this is to remove any old cloned files
+rmdir /s /q llm-inference-web
 
 git clone https://github.com/sameera-velicheti/llm-inference-web.git
 
