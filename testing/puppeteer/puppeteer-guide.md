@@ -26,8 +26,7 @@ node backend/server.js
 ```
 Open Terminal 2:  at the top of cmd, there is a + and down arrow, open another cmd terminal
 ```bash
-ollama pull llama3
-ollama pull mistral
+ollama pull llama3.2:1b
 ```
 Open Terminal 3:
 ```bash
