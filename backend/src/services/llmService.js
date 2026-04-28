@@ -12,13 +12,6 @@ const MODEL_CATALOG = [
     type: "local"
   },
   {
-    id: "ollama-mistral",
-    label: "Mistral (local)",
-    provider: "ollama",
-    modelName: process.env.OLLAMA_MISTRAL_MODEL || "mistral",
-    type: "local"
-  },
-  {
     id: "gpt",
     label: "GPT (public API)",
     provider: "openai",
@@ -30,13 +23,6 @@ const MODEL_CATALOG = [
     label: "Gemini (public API)",
     provider: "gemini",
     modelName: process.env.GEMINI_MODEL || "gemini-2.0-flash",
-    type: "public"
-  },
-  {
-    id: "claude",
-    label: "Claude (public API)",
-    provider: "anthropic",
-    modelName: process.env.CLAUDE_MODEL || "claude-3-haiku-20240307",
     type: "public"
   }
 ];
