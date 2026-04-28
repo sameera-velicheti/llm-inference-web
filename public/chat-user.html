@@ -208,7 +208,7 @@
       border-radius: var(--radius);
       background: var(--bg);
       transition: border-color 0.15s;
-      overflow: hidden; /* keep children clipped */
+      overflow: visible; /* must be visible so dropdown can escape the box */
     }
     .textarea-with-controls:focus-within { border-color: var(--text); }
 
@@ -411,7 +411,7 @@
           item.className = "dropdown-item" + (i === 0 ? " selected" : "");
           item.dataset.modelId = m.id;
           item.innerHTML = `<span class="item-dot"></span> ${m.label}`;
-          item.addEventListener("click", () => selectModel(m.id, m.label));
+          item.addEventListener("click", (e) => { e.stopPropagation(); selectModel(m.id, m.label); });
 
           if (m.type === "local")  localList.appendChild(item);
           else                     publicList.appendChild(item);
@@ -472,7 +472,8 @@
     });
 
     document.querySelectorAll("#modeDropdown .dropdown-item").forEach(item => {
-      item.addEventListener("click", () => {
+      item.addEventListener("click", (e) => {
+        e.stopPropagation();
         selectedMode = item.dataset.mode;
         document.getElementById("modeLabelText").textContent =
           item.textContent.trim();
@@ -511,6 +512,8 @@
       modelDropdown.classList.add("hidden");
       modeTrigger.classList.remove("active");
     });
+    modeDropdown.addEventListener("click", (e) => e.stopPropagation());
+    modelDropdown.addEventListener("click", (e) => e.stopPropagation());
 
     // ── Message rendering ────────────────────────────────────
     function appendMessage(role, text) {
