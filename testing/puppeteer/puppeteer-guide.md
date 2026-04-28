@@ -25,7 +25,9 @@ git clone -b ethan-iteration3-full-dev --single-branch https://github.com/sameer
 cd llm-inference-web
 npm install
 
-//IMPORTANT: before turning on the server, you must manually put in your API keys into the .env file. After the git is cloned onto your device, look for the .env file in the cloned files. You will need to edit the .env file by plugging in the corresponding API keys. 
+//IMPORTANT: before turning on the server, you must manually put in your API keys into the .env file.
+//After the git is cloned onto your device, look for the .env file in the cloned files.
+//You will need to edit the .env file by plugging in the corresponding API keys. 
 node backend/server.js
 
 //should say "Server running on http://localhost:3000"
