@@ -1,6 +1,18 @@
-To properly test using puppeteer: 
+The instructions for terminal 1-3 are all on how to get the server running. Instructions for terminal 4 are for the puppeteer testing. 
+To properly test: 
 
 Open Terminal 1:
+
+```bash
+ollama serve
+```
+
+Open Terminal 2: 
+```bash
+ollama pull llama3.2:1b
+
+```
+Open Terminal 3:
 ```bash
 rmdir /s /q llm-inference-web //this is to remove any old cloned files
 
@@ -24,11 +36,7 @@ node backend/server.js
 
 //should say "Server running on http://localhost:3000"
 ```
-Open Terminal 2:  at the top of cmd, there is a + and down arrow, open another cmd terminal
-```bash
-ollama pull llama3.2:1b
-```
-Open Terminal 3:
+Open Terminal 4: This is for the puppeteer testing. 
 ```bash
 cd llm-inference-web
 
