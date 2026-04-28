@@ -24,8 +24,12 @@ node backend/server.js
 
 //should say "Server running on http://localhost:3000"
 ```
-
-Open Terminal 2: at the top of cmd, there is a + and down arrow, open another cmd terminal
+Open Terminal 2:  at the top of cmd, there is a + and down arrow, open another cmd terminal
+```bash
+ollama pull llama3
+ollama pull mistral
+```
+Open Terminal 3:
 ```bash
 cd llm-inference-web
 
