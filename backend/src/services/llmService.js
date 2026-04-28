@@ -6,9 +6,9 @@ const DEFAULT_OLLAMA_URL = process.env.OLLAMA_URL || "http://localhost:11434";
 const MODEL_CATALOG = [
   {
     id: "ollama-llama3",
-    label: "Llama 3 (local)",
+    label: "Llama 3.2 1B (local)",
     provider: "ollama",
-    modelName: process.env.OLLAMA_LLAMA_MODEL || "llama3",
+    modelName: process.env.OLLAMA_LLAMA_MODEL || "llama3.2:1b",
     type: "local"
   },
   {
