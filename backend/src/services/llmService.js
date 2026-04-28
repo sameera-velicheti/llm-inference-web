@@ -29,7 +29,7 @@ const MODEL_CATALOG = [
     id: "gemini",
     label: "Gemini (public API)",
     provider: "gemini",
-    modelName: process.env.GEMINI_MODEL || "gemini-1.5-flash-latest",
+    modelName: process.env.GEMINI_MODEL || "gemini-2.0-flash",
     type: "public"
   },
   {
@@ -228,18 +228,14 @@ async function callGemini(prompt, model, mode, history, weatherData) {
     return buildDemoResponse(prompt, model, mode);
   }
 
-  // Gemini uses a different message format — contents array with parts
-  const systemPrompt = getSystemPrompt(mode);
   const userContent =
     mode === "weather" && weatherData
       ? `${weatherData}\n\nUser question: ${prompt}`
       : prompt;
 
   // Build contents from history + current message
+  // Note: Gemini v1beta only supports "user" and "model" roles
   const contents = [
-    // Inject system prompt as a user/model exchange at the start
-    { role: "user",  parts: [{ text: systemPrompt }] },
-    { role: "model", parts: [{ text: "Understood." }] },
     ...normalizeHistory(history).map((m) => ({
       role: m.role === "assistant" ? "model" : "user",
       parts: [{ text: m.content }]
@@ -255,6 +251,10 @@ async function callGemini(prompt, model, mode, history, weatherData) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+      // system_instruction is a separate top-level field in Gemini API
+      system_instruction: {
+        parts: [{ text: getSystemPrompt(mode) }]
+      },
       contents,
       generationConfig: {
         maxOutputTokens: 1024,
