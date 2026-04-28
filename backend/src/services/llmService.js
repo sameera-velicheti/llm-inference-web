@@ -71,12 +71,10 @@ function getSystemPrompt(mode = "general") {
 // ── Weather Helper ───────────────────────────────────────────────────────────
 
 async function fetchWeather(location) {
-  const apiKey = process.env.OPENWEATHER_API_KEY;
+  const apiKey = process.env.OPENWEATHER_API_KEY?.trim();
 
-  if (
-    !apiKey ||
-    apiKey === "your-openweathermap-api-key-here"
-  ) {
+  if (!apiKey || apiKey.startsWith("your-")) {
+    console.warn("[weather] No valid API key configured.");
     return null;
   }
 
@@ -87,7 +85,11 @@ async function fetchWeather(location) {
   try {
     const res = await fetch(url);
 
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      console.error("[weather] API error:", res.status, err?.message);
+      return null;
+    }
 
     const d = await res.json();
 
@@ -98,17 +100,24 @@ async function fetchWeather(location) {
       `Humidity: ${d.main.humidity}%\n` +
       `Wind: ${d.wind.speed} m/s`
     );
-  } catch {
+  } catch (err) {
+    console.error("[weather] Fetch failed:", err.message);
     return null;
   }
 }
 
 function extractLocation(prompt) {
+  // Primary: "weather in/for/at <location>"
   const match = prompt.match(
-    /(?:weather\s+(?:in|for|at)|in|for|at)\s+([A-Za-z\s,]+?)(?:\?|$|,|\.|!)/i
+    /weather\s+(?:in|for|at)\s+([A-Za-z\s,]+?)(?:\?|$|\.|!)/i
   );
+  if (match) return match[1].trim();
 
-  return match ? match[1].trim() : null;
+  // Fallback: "in <Title Case location>"
+  const fallback = prompt.match(
+    /\bin\s+([A-Z][A-Za-z\s,]+?)(?:\?|$|\.|!)/
+  );
+  return fallback ? fallback[1].trim() : null;
 }
 
 // ── History ──────────────────────────────────────────────────────────────────
@@ -313,13 +322,21 @@ async function generateResponse({
 
   const model = findModel(modelId);
 
+  // Auto-detect weather intent even if mode wasn't explicitly set to "weather"
+  const isWeatherQuery = /weather/i.test(prompt);
+  const effectiveMode = isWeatherQuery ? "weather" : mode;
+
   let weatherData = null;
 
-  if (mode === "weather") {
+  if (effectiveMode === "weather") {
     const location = extractLocation(prompt);
+    console.log("[weather] Extracted location:", location);
 
     if (location) {
       weatherData = await fetchWeather(location);
+      console.log("[weather] Data fetched:", weatherData ? "success" : "null");
+    } else {
+      console.warn("[weather] Could not extract location from prompt:", prompt);
     }
   }
 
@@ -327,37 +344,19 @@ async function generateResponse({
     let text;
 
     if (model.provider === "ollama") {
-      text = await callOllama(
-        prompt,
-        model,
-        mode,
-        history,
-        weatherData
-      );
+      text = await callOllama(prompt, model, effectiveMode, history, weatherData);
     } else if (model.provider === "groq") {
-      text = await callGroq(
-        prompt,
-        model,
-        mode,
-        history,
-        weatherData
-      );
+      text = await callGroq(prompt, model, effectiveMode, history, weatherData);
     } else if (model.provider === "gemini") {
-      text = await callGemini(
-        prompt,
-        model,
-        mode,
-        history,
-        weatherData
-      );
+      text = await callGemini(prompt, model, effectiveMode, history, weatherData);
     } else {
-      text = buildDemoResponse(prompt, model, mode);
+      text = buildDemoResponse(prompt, model, effectiveMode);
     }
 
     return {
       model: model.label,
       modelId: model.id,
-      mode,
+      mode: effectiveMode,
       response: text,
       fallback: false
     };
@@ -367,8 +366,8 @@ async function generateResponse({
     return {
       model: model.label,
       modelId: model.id,
-      mode,
-      response: buildDemoResponse(prompt, model, mode),
+      mode: effectiveMode,
+      response: buildDemoResponse(prompt, model, effectiveMode),
       fallback: true,
       error: err.message
     };
