@@ -7,7 +7,7 @@ rmdir /s llm-inference-web //this is to remove any old cloned files
 git clone https://github.com/sameera-velicheti/llm-inference-web.git
 
 //use this instead if we are still in branch
-git clone -b mashel-iteration3-dev --single-branch https://github.com/sameera-velicheti/llm-inference-web.git
+git clone -b ethan-iterarion3-full-dev --single-branch https://github.com/sameera-velicheti/llm-inference-web.git
 
 cd llm-inference-web
 npm install
