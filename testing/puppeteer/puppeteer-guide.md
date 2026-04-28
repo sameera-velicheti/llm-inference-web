@@ -24,15 +24,6 @@ git clone -b ethan-iteration3-full-dev --single-branch https://github.com/sameer
 cd llm-inference-web
 npm install
 node backend/server.js
-# should say "Server running on http://localhost:3000"
-
-
-cd llm-inference-web
-
-npm install
-
-node backend/server.js
-
 
 //should say "Server running on http://localhost:3000"
 ```
