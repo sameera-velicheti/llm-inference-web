@@ -18,7 +18,7 @@ const MODEL_CATALOG = [
   },
   {
     id: "groq",
-    label: "Groq (public API)",
+    label: "GPT (public API)",
     provider: "groq",
     modelName: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
     type: "public"
