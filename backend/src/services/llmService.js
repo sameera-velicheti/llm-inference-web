@@ -59,9 +59,8 @@ function getSystemPrompt(mode = "general") {
 
   if (mode === "weather") {
     return (
-      "You are a weather assistant. You will receive real-time weather data " +
-      "inside the prompt. Summarize clearly including temperature, feels-like, " +
-      "humidity, wind, and conditions."
+      "You are a weather assistant. Use the live weather data provided by the backend. " +
+      "Summarize clearly using temperature, humidity, precipitation, and wind."
     );
   }
 
@@ -71,34 +70,56 @@ function getSystemPrompt(mode = "general") {
 // ── Weather Helper ───────────────────────────────────────────────────────────
 
 async function fetchWeather(location) {
-  const apiKey = process.env.OPENWEATHER_API_KEY?.trim();
-
-  if (!apiKey || apiKey.startsWith("your-")) {
-    console.warn("[weather] No valid API key configured.");
+  if (!location) {
+    console.warn("[weather] No location provided.");
     return null;
   }
 
-  const url =
-    `https://api.openweathermap.org/data/2.5/weather?q=` +
-    `${encodeURIComponent(location)}&appid=${apiKey}&units=metric`;
-
   try {
-    const res = await fetch(url);
+    // Step 1: Get lat/lon from city name
+    const geoUrl =
+      `https://geocoding-api.open-meteo.com/v1/search?name=` +
+      `${encodeURIComponent(location)}&count=1&language=en&format=json`;
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      console.error("[weather] API error:", res.status, err?.message);
+    const geoRes = await fetch(geoUrl);
+
+    if (!geoRes.ok) {
+      console.error("[weather] Geocoding failed:", geoRes.status);
       return null;
     }
 
-    const d = await res.json();
+    const geoData = await geoRes.json();
+
+    if (!geoData.results || geoData.results.length === 0) {
+      console.warn("[weather] No matching location found:", location);
+      return null;
+    }
+
+    const place = geoData.results[0];
+
+    // Step 2: Fetch weather
+    const weatherUrl =
+      `https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}` +
+      `&longitude=${place.longitude}` +
+      `&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m` +
+      `&temperature_unit=fahrenheit&wind_speed_unit=mph`;
+
+    const weatherRes = await fetch(weatherUrl);
+
+    if (!weatherRes.ok) {
+      console.error("[weather] Weather API failed:", weatherRes.status);
+      return null;
+    }
+
+    const weather = await weatherRes.json();
+    const current = weather.current;
 
     return (
-      `[Live weather for ${d.name}, ${d.sys.country}]\n` +
-      `Condition: ${d.weather[0].description}\n` +
-      `Temperature: ${d.main.temp}°C (feels like ${d.main.feels_like}°C)\n` +
-      `Humidity: ${d.main.humidity}%\n` +
-      `Wind: ${d.wind.speed} m/s`
+      `[Live weather for ${place.name}, ${place.country}]\n` +
+      `Temperature: ${current.temperature_2m}°F\n` +
+      `Feels like: ${current.apparent_temperature}°F\n` +
+      `Humidity: ${current.relative_humidity_2m}%\n` +
+      `Wind: ${current.wind_speed_10m} mph`
     );
   } catch (err) {
     console.error("[weather] Fetch failed:", err.message);
@@ -107,17 +128,19 @@ async function fetchWeather(location) {
 }
 
 function extractLocation(prompt) {
-  // Primary: "weather in/for/at <location>"
   const match = prompt.match(
     /weather\s+(?:in|for|at)\s+([A-Za-z\s,]+?)(?:\?|$|\.|!)/i
   );
-  if (match) return match[1].trim();
 
-  // Fallback: "in <Title Case location>"
+  if (match) {
+    return match[1].trim();
+  }
+
   const fallback = prompt.match(
     /\bin\s+([A-Z][A-Za-z\s,]+?)(?:\?|$|\.|!)/
   );
-  return fallback ? fallback[1].trim() : null;
+
+  return fallback ? fallback[1].trim() : "New Brunswick NJ";
 }
 
 // ── History ──────────────────────────────────────────────────────────────────
@@ -322,7 +345,6 @@ async function generateResponse({
 
   const model = findModel(modelId);
 
-  // Auto-detect weather intent even if mode wasn't explicitly set to "weather"
   const isWeatherQuery = /weather/i.test(prompt);
   const effectiveMode = isWeatherQuery ? "weather" : mode;
 
@@ -332,12 +354,18 @@ async function generateResponse({
     const location = extractLocation(prompt);
     console.log("[weather] Extracted location:", location);
 
-    if (location) {
-      weatherData = await fetchWeather(location);
-      console.log("[weather] Data fetched:", weatherData ? "success" : "null");
-    } else {
-      console.warn("[weather] Could not extract location from prompt:", prompt);
-    }
+    weatherData = await fetchWeather(location);
+    console.log("[weather] Data fetched:", weatherData ? "success" : "null");
+  }
+
+  if (effectiveMode === "weather" && weatherData) {
+    return {
+      model: model.label,
+      modelId: model.id,
+      mode: effectiveMode,
+      response: `${model.label} (weather mode):\n${weatherData}`,
+      fallback: false
+    };
   }
 
   try {
