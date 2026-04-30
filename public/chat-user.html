@@ -8,6 +8,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
   <style>
     /* ── New Chat Button ───────────────────────────────────── */
     .new-chat-btn {
@@ -208,14 +211,13 @@
       border-radius: var(--radius);
       background: var(--bg);
       transition: border-color 0.15s;
-      overflow: visible; /* must be visible so dropdown can escape the box */
+      overflow: visible;
     }
     .textarea-with-controls:focus-within { border-color: var(--text); }
 
     .textarea-with-controls textarea {
       flex: 1;
       padding: 0.65rem 0.85rem;
-      /* leave right space for the inline model btn */
       padding-right: 0.5rem;
       border: none;
       border-radius: 0;
@@ -270,6 +272,32 @@
       left: auto;
       min-width: 210px;
     }
+
+    /* ── Rendered message styles ───────────────────────────── */
+    .message-bubble p { margin: 0 0 0.5em; }
+    .message-bubble p:last-child { margin-bottom: 0; }
+    .message-bubble ul, .message-bubble ol { margin: 0.25em 0 0.5em 1.25em; padding: 0; }
+    .message-bubble li { margin-bottom: 0.2em; }
+    .message-bubble code {
+      font-family: monospace;
+      font-size: 0.875em;
+      background: rgba(0,0,0,0.07);
+      padding: 0.15em 0.35em;
+      border-radius: 4px;
+    }
+    .message-bubble pre {
+      background: rgba(0,0,0,0.07);
+      border-radius: 6px;
+      padding: 0.75em 1em;
+      overflow-x: auto;
+      margin: 0.5em 0;
+    }
+    .message-bubble pre code { background: none; padding: 0; }
+    .message-bubble h1, .message-bubble h2, .message-bubble h3 {
+      margin: 0.5em 0 0.25em;
+      font-weight: 600;
+    }
+    .message-bubble .katex-display { margin: 0.5em 0; overflow-x: auto; }
   </style>
 </head>
 <body class="chat-body">
@@ -356,7 +384,6 @@
             <!-- Model dropdown -->
             <div class="dropdown-panel hidden" id="modelDropdown">
               <div class="dropdown-heading">Local Models</div>
-              <!-- populated by JS from /api/llm/models -->
               <div id="localModelsList"></div>
               <div class="dropdown-divider"></div>
               <div class="dropdown-heading">Public Models</div>
@@ -417,7 +444,6 @@
           else                     publicList.appendChild(item);
         });
 
-        // Default to first model
         if (models.length > 0) {
           selectedModel = models[0].id;
           document.getElementById("modelLabelText").textContent = models[0].label;
@@ -515,6 +541,29 @@
     modeDropdown.addEventListener("click", (e) => e.stopPropagation());
     modelDropdown.addEventListener("click", (e) => e.stopPropagation());
 
+    // ── Markdown + LaTeX renderer ────────────────────────────
+    function renderMessage(raw) {
+      const mathBlocks = [];
+      let text = raw
+        .replace(/\$\$([\s\S]+?)\$\$/g, (_, math) => {
+          mathBlocks.push({ math, display: true });
+          return `MATHPLACEHOLDER_${mathBlocks.length - 1}_END`;
+        })
+        .replace(/\$([^\n$]+?)\$/g, (_, math) => {
+          mathBlocks.push({ math, display: false });
+          return `MATHPLACEHOLDER_${mathBlocks.length - 1}_END`;
+        });
+      text = marked.parse(text);
+      return text.replace(/MATHPLACEHOLDER_(\d+)_END/g, (_, i) => {
+        const { math, display } = mathBlocks[+i];
+        try {
+          return katex.renderToString(math, { displayMode: display, throwOnError: false });
+        } catch {
+          return display ? `$$${math}$$` : `$${math}$`;
+        }
+      });
+    }
+
     // ── Message rendering ────────────────────────────────────
     function appendMessage(role, text) {
       const welcome = document.getElementById("welcomeMsg");
@@ -526,7 +575,7 @@
 
       const bubble       = document.createElement("div");
       bubble.className   = "message-bubble";
-      bubble.textContent = text;
+      bubble.innerHTML   = renderMessage(text);
 
       msg.appendChild(bubble);
       container.appendChild(msg);
@@ -545,7 +594,6 @@
       sendBtn.disabled       = true;
 
       try {
-        // Create chat thread if first message
         if (!currentChatId) {
           const res  = await fetch("/api/chats", {
             method: "POST",
@@ -557,21 +605,18 @@
           loadChats();
         }
 
-        // Save user message to DB
         await fetch(`/api/chats/${currentChatId}/messages`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ role: "user", message: text })
         });
 
-        // Fetch history for context
         let history = [];
         try {
           const histRes = await fetch(`/api/chats/${currentChatId}/messages`);
           history = await histRes.json();
         } catch (_) {}
 
-        // Call LLM
         const llmRes = await fetch("/api/llm/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -588,7 +633,6 @@
 
         appendMessage("assistant", reply);
 
-        // Save assistant message to DB
         await fetch(`/api/chats/${currentChatId}/messages`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
