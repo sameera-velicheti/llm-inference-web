@@ -379,27 +379,31 @@
     modelDropdown.addEventListener("click", (e) => e.stopPropagation());
 
     // ── Markdown + LaTeX renderer ────────────────────────────
-    function renderMessage(raw) {
-      const mathBlocks = [];
-      let text = raw
-        .replace(/\$\$([\s\S]+?)\$\$/g, (_, math) => {
-          mathBlocks.push({ math, display: true });
-          return `MATHPLACEHOLDER_${mathBlocks.length - 1}_END`;
-        })
-        .replace(/\$([^\n$]+?)\$/g, (_, math) => {
-          mathBlocks.push({ math, display: false });
-          return `MATHPLACEHOLDER_${mathBlocks.length - 1}_END`;
-        });
-      text = marked.parse(text);
-      return text.replace(/MATHPLACEHOLDER_(\d+)_END/g, (_, i) => {
-        const { math, display } = mathBlocks[+i];
-        try {
-          return katex.renderToString(math, { displayMode: display, throwOnError: false });
-        } catch {
-          return display ? `$$${math}$$` : `$${math}$`;
-        }
-      });
+function renderMessage(raw) {
+  const mathBlocks = [];
+
+  const protect = (math, display) => {
+    mathBlocks.push({ math, display });
+    return `MATHPLACEHOLDER_${mathBlocks.length - 1}_END`;
+  };
+
+  let text = raw
+    .replace(/\\\[([\s\S]+?)\\\]/g,   (_, m) => protect(m, true))   // \[ ... \]
+    .replace(/\$\$([\s\S]+?)\$\$/g,   (_, m) => protect(m, true))   // $$ ... $$
+    .replace(/\\\(([^\n]+?)\\\)/g,    (_, m) => protect(m, false))  // \( ... \)
+    .replace(/\$([^\n$]+?)\$/g,       (_, m) => protect(m, false)); // $ ... $
+
+  text = marked.parse(text);
+
+  return text.replace(/MATHPLACEHOLDER_(\d+)_END/g, (_, i) => {
+    const { math, display } = mathBlocks[+i];
+    try {
+      return katex.renderToString(math, { displayMode: display, throwOnError: false });
+    } catch {
+      return display ? `\\[${math}\\]` : `\\(${math}\\)`;
     }
+  });
+}
 
     // ── Message rendering ────────────────────────────────────
     function appendMessage(role, text) {
