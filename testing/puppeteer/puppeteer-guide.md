@@ -45,6 +45,12 @@ npm install
 
 node testing/puppeteer/register.js
 node testing/puppeteer/login.js
+
+# Iteration 3 LLM feature tests (run after login works)
+node testing/puppeteer/model-selection.js
+node testing/puppeteer/math-mode.js
+node testing/puppeteer/weather-mode.js
+
 node testing/puppeteer/logout.js
 node testing/puppeteer/forgot-password.js
 node testing/puppeteer/reset-password.js
