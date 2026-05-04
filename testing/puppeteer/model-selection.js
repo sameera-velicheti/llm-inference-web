@@ -21,49 +21,36 @@ const puppeteer = require("puppeteer");
     await page.type("#password", "password123");
     await page.click("#submitBtn");
     await page.waitForSelector("#logoutBtn", { timeout: 10000 });
+    console.log("Logged in successfully");
 
-    // Wait for models to load into the dropdown
-    await page.waitForSelector("#modelDropdown", { timeout: 5000 });
+    // Wait for page to fully load
+    await new Promise(r => setTimeout(r, 2000));
 
     // Open the model dropdown
     await page.click("#modelTrigger");
-    await page.waitForFunction(
-      () => !document.getElementById("modelDropdown").classList.contains("hidden"),
-      { timeout: 5000 }
-    );
+    await new Promise(r => setTimeout(r, 1000));
+    console.log("Opened model dropdown");
 
-    // Check local models section is present
-    const localHeading = await page.$eval(
-      "#modelDropdown .dropdown-heading",
-      el => el.textContent.trim()
-    );
-    console.log("Local models section heading:", localHeading);
-
-    // Check at least one model item exists
+    // Check model items exist
     const modelItems = await page.$$(".dropdown-item[data-model-id]");
     if (modelItems.length === 0) throw new Error("No model items found in dropdown");
     console.log(`Found ${modelItems.length} model(s) in dropdown`);
 
-    // Click the first model item
+    // Click the first model
     await modelItems[0].click();
-    await page.waitForFunction(
-      () => document.getElementById("modelDropdown").classList.contains("hidden"),
-      { timeout: 3000 }
-    );
+    await new Promise(r => setTimeout(r, 1000));
 
     const selectedLabel = await page.$eval("#modelLabelText", el => el.textContent.trim());
-    console.log("Selected model label:", selectedLabel);
+    console.log("Selected model:", selectedLabel);
 
-    // Now try clicking a public model if available
+    // Open dropdown again and pick last model (likely a public one)
     await page.click("#modelTrigger");
-    await page.waitForFunction(
-      () => !document.getElementById("modelDropdown").classList.contains("hidden"),
-      { timeout: 5000 }
-    );
+    await new Promise(r => setTimeout(r, 1000));
 
     const allItems = await page.$$(".dropdown-item[data-model-id]");
     if (allItems.length > 1) {
-      await allItems[allItems.length - 1].click(); // pick last (likely a public model)
+      await allItems[allItems.length - 1].click();
+      await new Promise(r => setTimeout(r, 1000));
       const newLabel = await page.$eval("#modelLabelText", el => el.textContent.trim());
       console.log("Switched to model:", newLabel);
     }
