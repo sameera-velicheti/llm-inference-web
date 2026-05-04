@@ -8,6 +8,5 @@ router.get("/chats/search", requireAuth, chatController.searchChats);
 router.get("/chats/:chatId/messages", requireAuth, chatController.getMessages);
 router.post("/chats", requireAuth, chatController.createChat);
 router.post("/chats/:chatId/messages", requireAuth, chatController.addMessage);
-router.post("/chats/:chatId/ask", requireAuth, chatController.askMultipleLLMs);
 
 module.exports = router;
