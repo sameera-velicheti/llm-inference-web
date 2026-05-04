@@ -1,4 +1,3 @@
-const { getAllLLMResponses } = require("../services/llmAggregator");
 const chatModel = require("../models/chatModel");
 
 exports.getUserChats = async (req, res) => {
@@ -62,36 +61,4 @@ exports.getMessages = async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Failed to load messages" });
   }
-};
-
-async function askMultipleLLMs(req, res) {
-    try {
-        const { chatId, prompt } = req.body;
-
-        // save user message
-        await chatModel.addMessage(chatId, "user", prompt);
-
-        // get responses from multiple models
-        const responses = await getAllLLMResponses(prompt);
-
-        // save AI responses
-        await chatModel.addMessage(chatId, "openai", responses.openai);
-        await chatModel.addMessage(chatId, "gemini", responses.gemini);
-        await chatModel.addMessage(chatId, "claude", responses.claude);
-
-        res.json(responses);
-
-    } catch (error) {
-        res.status(500).json({
-            error: "Failed to get LLM responses"
-        });
-    }
-}
-
-module.exports = {
-   getUserChats,
-   searchChats,
-   createChat,
-   addMessage,
-   askMultipleLLMs
 };
