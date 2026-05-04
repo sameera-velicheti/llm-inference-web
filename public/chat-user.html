@@ -51,25 +51,7 @@
       ></textarea>
       <button class="chat-send-btn" id="sendBtn">Send</button>
     </div>
-  
   </div>
-
-    <div class="llm-responses">
-      <div class="model-box">
-        <h3>OpenAI</h3>
-        <p id="openaiResponse"></p>
-    </div>
-
-    <div class="model-box">
-        <h3>Gemini</h3>
-        <p id="geminiResponse"></p>
-    </div>
-
-    <div class="model-box">
-        <h3>Claude</h3>
-        <p id="claudeResponse"></p>
-    </div>
-</div>
 
   <script>
     // ── Session guard ────────────────────────────────────────
@@ -143,6 +125,7 @@
 
   if (!text) return;
 
+  // Show user message immediately
   appendMessage("user", text);
 
   chatInput.value = "";
@@ -150,13 +133,11 @@
   sendBtn.disabled = true;
 
   try {
-    // Create chat if first message
+    // Create chat if it doesn't exist yet
     if (!currentChatId) {
       const res = await fetch("/api/chats", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: text.substring(0, 25)
         })
@@ -165,35 +146,37 @@
       const data = await res.json();
       currentChatId = data.chatId;
 
-      loadChats();
+      loadChats(); // refresh sidebar 
     }
 
-    // Call multi-LLM route
-    const response = await fetch(`/api/chats/${currentChatId}/ask`, {
+    // Save user message
+    await fetch(`/api/chats/${currentChatId}/messages`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        prompt: text
+        role: "user",
+        message: text
       })
     });
 
-    const data = await response.json();
+    // Fake assistant reply (for now)
+    const reply = "LLM inference is not yet connected.";
 
-    // Display all model responses in chat
-    appendMessage("openai", data.openai);
-    appendMessage("gemini", data.gemini);
-    appendMessage("claude", data.claude);
+    appendMessage("assistant", reply);
 
-    // Update side comparison boxes
-    document.getElementById("openaiResponse").textContent = data.openai;
-    document.getElementById("geminiResponse").textContent = data.gemini;
-    document.getElementById("claudeResponse").textContent = data.claude;
+    // Save assistant message
+    await fetch(`/api/chats/${currentChatId}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        role: "assistant",
+        message: reply
+      })
+    });
 
   } catch (err) {
     console.error(err);
-    appendMessage("assistant", "Error getting LLM responses.");
+    appendMessage("assistant", "Error sending message.");
   }
 
   sendBtn.disabled = false;
