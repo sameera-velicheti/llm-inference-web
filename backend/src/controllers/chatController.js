@@ -11,69 +11,67 @@ exports.getUserChats = async (req, res) => {
 };
 
 exports.searchChats = async (req, res) => {
-    try {
-        const query = req.query.q;
+  try {
+    const query = req.query.q;
 
-        const chats = await chatModel.searchChats(
-            req.session.user.id,
-            query
-        );
+    const chats = await chatModel.searchChats(
+      req.session.user.id,
+      query
+    );
 
-        res.json(chats);
-    } catch (err) {
-        res.status(500).json({ error: "Search failed" });
-    }
+    res.json(chats);
+  } catch (err) {
+    res.status(500).json({ error: "Search failed" });
+  }
 };
 
 exports.createChat = async (req, res) => {
-    try {
-        const userId = req.session.user.id;
-        const { title } = req.body;
-
-        const chat = await chatModel.createChat(userId, title);
-
-        res.json({ chatId: chat.id });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Failed to create chat" });
-    }
+  try {
+    const userId = req.session.user.id;
+    const { title } = req.body;
+    const chat = chatModel.createChat(userId, title);
+    res.json({ chatId: chat.id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to create chat" });
+  }
 };
 
 exports.addMessage = async (req, res) => {
-    try {
-        const { chatId } = req.params;
-        const { role, message } = req.body;
+  try {
+    const { chatId } = req.params;
+    const { role, message } = req.body;
 
-        await chatModel.addMessage(chatId, role, message);
+    await chatModel.addMessage(chatId, role, message);
 
-        res.json({ success: true });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Failed to save message" });
-    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to save message" });
+  }
 };
 
 exports.getMessages = async (req, res) => {
-    try {
-        const { chatId } = req.params;
+  try {
+    const { chatId } = req.params;
 
-        const messages = await chatModel.getMessages(chatId);
+    const messages = chatModel.getMessages(chatId);
 
-        res.json(messages);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Failed to load messages" });
-    }
+    res.json(messages);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to load messages" });
+  }
 };
 
-exports.askMultipleLLMs = async (req, res) => {
+async function askMultipleLLMs(req, res) {
     try {
         const { chatId, prompt } = req.body;
 
         // save user message
         await chatModel.addMessage(chatId, "user", prompt);
 
-        // call all LLMs simultaneously
+        // get responses from multiple models
         const responses = await getAllLLMResponses(prompt);
 
         // save AI responses
@@ -84,9 +82,16 @@ exports.askMultipleLLMs = async (req, res) => {
         res.json(responses);
 
     } catch (error) {
-        console.error(error);
         res.status(500).json({
             error: "Failed to get LLM responses"
         });
     }
+}
+
+module.exports = {
+   getUserChats,
+   searchChats,
+   createChat,
+   addMessage,
+   askMultipleLLMs
 };
