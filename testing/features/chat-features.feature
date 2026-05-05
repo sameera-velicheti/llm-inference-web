@@ -20,9 +20,9 @@ Feature: Chat System Features
   Scenario: View public models
     Given I am on the chat page
     When I open the model dropdown
-    Then I should see "GPT"
+    Then I should see "ollama-llama3"
+    And I should see "GPT"
     And I should see "Gemini"
-    And I should see "Claude"
 
   Scenario: Conversation memory is preserved
     Given I send a message "Hello"
