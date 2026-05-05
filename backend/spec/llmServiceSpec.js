@@ -9,12 +9,12 @@ describe("LLM Service", () => {
   it("should generate a response", async () => {
     const result = await llmService.generateResponse({
       prompt: "test",
-      modelId: "gpt",
+      modelId: "groq",
       mode: "general",
       history: []
     });
 
     expect(result.response).toBeDefined();
-    expect(result.modelId).toBe("gpt");
+    expect(result.modelId).toBe("groq");
   });
 });
