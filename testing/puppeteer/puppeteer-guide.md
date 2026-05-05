@@ -11,9 +11,6 @@ Open Terminal 2:
 ```bash
 ollama pull llama3.2:1b
 
-```
-Open Terminal 3:
-```bash
  //this is to remove any old cloned files
 rmdir /s /q llm-inference-web
 
@@ -33,11 +30,14 @@ node backend/server.js
 
 //should say "Server running on http://localhost:3000"
 ```
-Open Terminal 4: This is for the puppeteer testing. 
+Open Terminal 3: This is for Jasmine and Puppetteer testing
 ```bash
 cd llm-inference-web
 
 npm install
+
+//for Jasmine Testing
+npm test
 
 //now we can run the specific tests
 //but assuming we just opened the server and there are no registered accounts
@@ -62,5 +62,4 @@ node testing/puppeteer/login.js
 node testing/puppeteer/register.js
 
 //
-
 ```
