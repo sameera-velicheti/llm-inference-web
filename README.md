@@ -353,6 +353,17 @@ The chat interface is fully built and session-authenticated. The LLM inference c
 ### Session Security
 Sessions are managed server-side via `express-session`. The session secret is currently hardcoded as a development placeholder and should be moved to an environment variable before any production deployment.
 
+### Multi AI System (Iteration 3)
+
+Support for locally hosted and public LLM models were added in Iteration 3. 
+
+Features include:
+- Added a dropdown that shows a selection of AI thinking modes (General, Math, Weather)
+- Added a dropdown that shows a list of available LLM models (Ollama, Groq, Gemini)
+- Added weather mode using Open-Meteo's free geocoding and weatheer API (no API key required)
+- Added support for sending converation history with each prompt so model responses are context-aware
+- Added a new /api/llm backend route to handle model selection and response generation separately from existing chat and auth routes
+- Added two new REST endpoints: GET /api/llm/models to fetch available models and POST /api/llm/chat to send prompts to the selected model
 ---
 
 ## Iteration Progress
@@ -361,4 +372,4 @@ Sessions are managed server-side via `express-session`. The session secret is cu
 |---|---|---|
 | Iteration 1 | Authentication, user accounts, frontend pages, unit tests | ✅ Complete |
 | Iteration 2 | Chat UI, chat history, message persistence, search functionality | ✅ Complete |
-| Iteration 3 | TBD | 🔲 Upcoming |
+| Iteration 3 | Integration of locally hosted and public LLM models  | ✅ Complete |
