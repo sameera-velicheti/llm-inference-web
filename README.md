@@ -364,6 +364,14 @@ Features include:
 - Added support for sending converation history with each prompt so model responses are context-aware
 - Added a new /api/llm backend route to handle model selection and response generation separately from existing chat and auth routes
 - Added two new REST endpoints: GET /api/llm/models to fetch available models and POST /api/llm/chat to send prompts to the selected model
+
+The iteration is fully functional and assistant responses should always work (assuming that API keys are being used). The following API keys were obtained from: 
+[Gemini API Key Link](https://aistudio.google.com/welcome?utm_source=google&utm_medium=cpc&utm_campaign=Cloud-SS-DR-AIS-FY26-global-gsem-1713578&utm_content=text-ad&utm_term=KW_gemini%20api%20keys&gad_source=1&gad_campaignid=23417416052&gbraid=0AAAAACn9t66rJAAfmsVJxx7zfq07ctCV6&gclid=Cj0KCQjwh-HPBhCIARIsAC0p3ccoxehZG-0cN6MUK9yp2OPERHrLBEP3QVpHGmS9rHCRVsSNvAX9g0caAnI5EALw_wcB)
+[Groq (uses openai model) API Key Link](https://console.groq.com/keys)
+
+Save these keys privately, and to never share in any public domain. 
+
+
 ---
 
 ## Iteration Progress
