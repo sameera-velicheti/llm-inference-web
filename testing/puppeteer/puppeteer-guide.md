@@ -1,4 +1,4 @@
-The instructions for terminal 1-3 are all on how to get the server running. Instructions for terminal 4 are for the puppeteer testing. 
+The instructions for terminal 1-3 are all on how to get the server running. Instructions for terminal 4 are for the Jasmine and Puppeteer testing. 
 To properly test: 
 
 Open Terminal 1:
