@@ -8,6 +8,193 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+  <style>
+    /* ── Input toolbar row ─────────────────────────────────── */
+    .chat-input-toolbar {
+      max-width: 760px;
+      margin: 0 auto 0.45rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    /* ── Thinking mode trigger ─────────────────────────────── */
+    .mode-trigger {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.3rem 0.6rem;
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      background: var(--bg);
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      white-space: nowrap;
+    }
+    .mode-trigger:hover { border-color: var(--text); color: var(--text); }
+    .mode-trigger.active { border-color: var(--text); color: var(--text); background: var(--surface); }
+    .mode-trigger .cloud-icon { font-size: 1rem; line-height: 1; }
+
+    /* ── Shared dropdown styles ────────────────────────────── */
+    .dropdown-panel {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 0;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      min-width: 180px;
+      z-index: 200;
+      overflow: hidden;
+      animation: dropUp 0.15s ease both;
+    }
+    @keyframes dropUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .dropdown-panel.hidden { display: none; }
+
+    .dropdown-heading {
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+      padding: 0.6rem 0.85rem 0.3rem;
+    }
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.85rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: background 0.1s;
+      color: var(--text);
+    }
+    .dropdown-item:hover { background: var(--bg); }
+    .dropdown-item.selected { font-weight: 500; background: var(--bg); }
+    .dropdown-item .item-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+    .dropdown-item.selected .item-dot { background: var(--text); }
+    .dropdown-divider { height: 1px; background: var(--border); margin: 0.3rem 0; }
+
+    /* ── Mode trigger wrapper ──────────────────────────────── */
+    .mode-trigger-wrapper { position: relative; }
+
+    /* ── Textarea with inline model button ─────────────────── */
+    .chat-input-box-wrapper {
+      max-width: 760px;
+      margin: 0 auto;
+      display: flex;
+      gap: 0.65rem;
+      align-items: flex-end;
+    }
+
+    .textarea-with-controls {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg);
+      transition: border-color 0.15s;
+      overflow: visible;
+    }
+    .textarea-with-controls:focus-within { border-color: var(--text); }
+
+    .textarea-with-controls textarea {
+      flex: 1;
+      padding: 0.65rem 0.85rem;
+      padding-right: 0.5rem;
+      border: none;
+      border-radius: 0;
+      font-family: var(--font-body);
+      font-size: 0.925rem;
+      resize: none;
+      background: transparent;
+      color: var(--text);
+      outline: none;
+      line-height: 1.5;
+      max-height: 140px;
+    }
+
+    .inline-model-wrapper {
+      position: relative;
+      align-self: flex-end;
+      margin: 0.45rem 0.5rem 0.45rem 0;
+    }
+    .inline-model-wrapper .dropdown-panel {
+      right: 0;
+      left: auto;
+      min-width: 210px;
+    }
+
+    .inline-model-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.28rem 0.55rem;
+      border: 1.5px solid var(--border);
+      border-radius: calc(var(--radius) - 1px);
+      background: var(--surface);
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color 0.15s;
+      white-space: nowrap;
+      max-width: 140px;
+    }
+    .inline-model-btn:hover { border-color: var(--text); }
+    .inline-model-btn .model-name-display {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 90px;
+    }
+    .inline-model-btn .chevron { font-size: 0.55rem; color: var(--muted); }
+
+    /* ── Rendered message styles ───────────────────────────── */
+    .message-bubble p { margin: 0 0 0.5em; }
+    .message-bubble p:last-child { margin-bottom: 0; }
+    .message-bubble ul, .message-bubble ol { margin: 0.25em 0 0.5em 1.25em; padding: 0; }
+    .message-bubble li { margin-bottom: 0.2em; }
+    .message-bubble code {
+      font-family: monospace;
+      font-size: 0.875em;
+      background: rgba(0,0,0,0.07);
+      padding: 0.15em 0.35em;
+      border-radius: 4px;
+    }
+    .message-bubble pre {
+      background: rgba(0,0,0,0.07);
+      border-radius: 6px;
+      padding: 0.75em 1em;
+      overflow-x: auto;
+      margin: 0.5em 0;
+    }
+    .message-bubble pre code { background: none; padding: 0; }
+    .message-bubble h1, .message-bubble h2, .message-bubble h3 {
+      margin: 0.5em 0 0.25em;
+      font-weight: 600;
+    }
+    .message-bubble .katex-display { margin: 0.5em 0; overflow-x: auto; }
+  </style>
 </head>
 <body class="chat-body">
 
@@ -27,19 +214,66 @@
   </div>
 
   <div class="chat-input-area">
-    <div class="chat-input-inner">
-      <textarea
-        id="chatInput"
-        rows="1"
-        placeholder="Ask anything…"
-      ></textarea>
+
+    <!-- Toolbar: thinking mode -->
+    <div class="chat-input-toolbar">
+      <div class="mode-trigger-wrapper">
+        <button class="mode-trigger" id="modeTrigger" title="Select thinking mode">
+          <span class="cloud-icon">🌤</span>
+          <span class="mode-label-text" id="modeLabelText">General</span>
+        </button>
+
+        <div class="dropdown-panel hidden" id="modeDropdown">
+          <div class="dropdown-heading">Thinking Modes</div>
+          <div class="dropdown-item selected" data-mode="general">
+            <span class="item-dot"></span> General
+          </div>
+          <div class="dropdown-item" data-mode="math">
+            <span class="item-dot"></span> Math
+          </div>
+          <div class="dropdown-item" data-mode="weather">
+            <span class="item-dot"></span> Weather
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Textarea + inline model selector -->
+    <div class="chat-input-box-wrapper">
+      <div class="textarea-with-controls">
+        <textarea
+          id="chatInput"
+          rows="1"
+          placeholder="Ask anything…"
+        ></textarea>
+
+        <div class="inline-model-wrapper">
+          <button class="inline-model-btn" id="modelTrigger" title="Select model">
+            <span class="model-name-display" id="modelLabelText">Llama 3 (local)</span>
+            <span class="chevron">▼</span>
+          </button>
+
+          <div class="dropdown-panel hidden" id="modelDropdown">
+            <div class="dropdown-heading">Local Models</div>
+            <div id="localModelsList"></div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-heading">Public Models</div>
+            <div id="publicModelsList"></div>
+          </div>
+        </div>
+      </div>
+
       <button class="chat-send-btn" id="sendBtn">Send</button>
     </div>
+
   </div>
 
   <script>
+    // ── State ────────────────────────────────────────────────
+    let selectedMode  = "general";
+    let selectedModel = "ollama-llama3";
+
     // ── Session guard ────────────────────────────────────────
-    // Make sure the user actually has a valid session before letting them chat
     (async () => {
       try {
         const res  = await fetch("/api/auth/me");
@@ -47,8 +281,35 @@
         if (!data.guest && !data.user && !data.casUser) {
           window.location.href = "index.html";
         }
-      } catch {
-        window.location.href = "index.html";
+      } catch { window.location.href = "index.html"; }
+    })();
+
+    // ── Load models ──────────────────────────────────────────
+    (async () => {
+      try {
+        const res    = await fetch("/api/llm/models");
+        const data   = await res.json();
+        const models = data.models || [];
+
+        const localList  = document.getElementById("localModelsList");
+        const publicList = document.getElementById("publicModelsList");
+
+        models.forEach((m, i) => {
+          const item = document.createElement("div");
+          item.className   = "dropdown-item" + (i === 0 ? " selected" : "");
+          item.dataset.modelId = m.id;
+          item.innerHTML   = `<span class="item-dot"></span> ${m.label}`;
+          item.addEventListener("click", (e) => { e.stopPropagation(); selectModel(m.id, m.label); });
+          if (m.type === "local") localList.appendChild(item);
+          else                    publicList.appendChild(item);
+        });
+
+        if (models.length > 0) {
+          selectedModel = models[0].id;
+          document.getElementById("modelLabelText").textContent = models[0].label;
+        }
+      } catch (err) {
+        console.warn("Could not load models:", err);
       }
     })();
 
@@ -59,29 +320,102 @@
       chatInput.style.height = chatInput.scrollHeight + "px";
     });
 
-    // ── Send on Enter (Shift+Enter for newline) ──────────────
     chatInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+    document.getElementById("sendBtn").addEventListener("click", sendMessage);
+
+    // ── Thinking mode dropdown ───────────────────────────────
+    const modeTrigger  = document.getElementById("modeTrigger");
+    const modeDropdown = document.getElementById("modeDropdown");
+
+    modeTrigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      modeDropdown.classList.toggle("hidden");
+      modelDropdown.classList.add("hidden");
+      modeTrigger.classList.toggle("active", !modeDropdown.classList.contains("hidden"));
     });
 
-    document.getElementById("sendBtn").addEventListener("click", sendMessage);
+    document.querySelectorAll("#modeDropdown .dropdown-item").forEach(item => {
+      item.addEventListener("click", (e) => {
+        e.stopPropagation();
+        selectedMode = item.dataset.mode;
+        document.getElementById("modeLabelText").textContent = item.textContent.trim();
+        document.querySelectorAll("#modeDropdown .dropdown-item")
+          .forEach(el => el.classList.remove("selected"));
+        item.classList.add("selected");
+        modeDropdown.classList.add("hidden");
+        modeTrigger.classList.remove("active");
+      });
+    });
+
+    // ── Model dropdown ───────────────────────────────────────
+    const modelTrigger  = document.getElementById("modelTrigger");
+    const modelDropdown = document.getElementById("modelDropdown");
+
+    modelTrigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      modelDropdown.classList.toggle("hidden");
+      modeDropdown.classList.add("hidden");
+      modeTrigger.classList.remove("active");
+    });
+
+    function selectModel(id, label) {
+      selectedModel = id;
+      document.getElementById("modelLabelText").textContent = label;
+      document.querySelectorAll("#modelDropdown .dropdown-item")
+        .forEach(el => el.classList.remove("selected"));
+      const active = document.querySelector(`[data-model-id="${id}"]`);
+      if (active) active.classList.add("selected");
+      modelDropdown.classList.add("hidden");
+    }
+
+    document.addEventListener("click", () => {
+      modeDropdown.classList.add("hidden");
+      modelDropdown.classList.add("hidden");
+      modeTrigger.classList.remove("active");
+    });
+    modeDropdown.addEventListener("click", (e) => e.stopPropagation());
+    modelDropdown.addEventListener("click", (e) => e.stopPropagation());
+
+    // ── Markdown + LaTeX renderer ────────────────────────────
+function renderMessage(raw) {
+  const mathBlocks = [];
+
+  const protect = (math, display) => {
+    mathBlocks.push({ math, display });
+    return `MATHPLACEHOLDER_${mathBlocks.length - 1}_END`;
+  };
+
+  let text = raw
+    .replace(/\\\[([\s\S]+?)\\\]/g,   (_, m) => protect(m, true))   // \[ ... \]
+    .replace(/\$\$([\s\S]+?)\$\$/g,   (_, m) => protect(m, true))   // $$ ... $$
+    .replace(/\\\(([^\n]+?)\\\)/g,    (_, m) => protect(m, false))  // \( ... \)
+    .replace(/\$([^\n$]+?)\$/g,       (_, m) => protect(m, false)); // $ ... $
+
+  text = marked.parse(text);
+
+  return text.replace(/MATHPLACEHOLDER_(\d+)_END/g, (_, i) => {
+    const { math, display } = mathBlocks[+i];
+    try {
+      return katex.renderToString(math, { displayMode: display, throwOnError: false });
+    } catch {
+      return display ? `\\[${math}\\]` : `\\(${math}\\)`;
+    }
+  });
+}
 
     // ── Message rendering ────────────────────────────────────
     function appendMessage(role, text) {
       const welcome = document.getElementById("welcomeMsg");
       if (welcome) welcome.remove();
 
-      const container = document.getElementById("chatMessages");
-      const msg       = document.createElement("div");
-      msg.className   = `message ${role}`;
-
+      const container    = document.getElementById("chatMessages");
+      const msg          = document.createElement("div");
+      msg.className      = `message ${role}`;
       const bubble       = document.createElement("div");
       bubble.className   = "message-bubble";
-      bubble.textContent = text;
-
+      bubble.innerHTML   = renderMessage(text);
       msg.appendChild(bubble);
       container.appendChild(msg);
       container.scrollTop = container.scrollHeight;
@@ -91,16 +425,32 @@
     async function sendMessage() {
       const text    = chatInput.value.trim();
       const sendBtn = document.getElementById("sendBtn");
-
       if (!text) return;
 
       appendMessage("user", text);
-      chatInput.value      = "";
+      chatInput.value        = "";
       chatInput.style.height = "auto";
-      sendBtn.disabled     = true;
+      sendBtn.disabled       = true;
 
-      // Placeholder response — LLM integration comes in a future iteration
-      appendMessage("assistant", "LLM inference is not yet connected. This is a placeholder response.");
+      try {
+        const llmRes = await fetch("/api/llm/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt:  text,
+            modelId: selectedModel,
+            mode:    selectedMode,
+            history: []
+          })
+        });
+
+        const llmData = await llmRes.json();
+        appendMessage("assistant", llmData.response || "No response from model.");
+      } catch (err) {
+        console.error(err);
+        appendMessage("assistant", "Error sending message.");
+      }
+
       sendBtn.disabled = false;
     }
   </script>

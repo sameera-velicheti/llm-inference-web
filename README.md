@@ -374,10 +374,29 @@ Save these keys privately, and to never share in any public domain.
 
 ---
 
+### Multi AI System (Iteration 3)
+Support for locally hosted and public LLM models were added in Iteration 3.
+
+Features include:
+- Added a dropdown that shows a selection of AI thinking modes (General, Math, Weather)
+- Added a dropdown that shows a list of available LLM models (Ollama, Groq, Gemini)
+- Added weather mode using Open-Meteo's free geocoding and weatheer API (no API key required)
+- Added support for sending converation history with each prompt so model responses are context-aware
+- Added a new /api/llm backend route to handle model selection and response generation separately from existing chat and auth routes
+- Added two new REST endpoints: GET /api/llm/models to fetch available models and POST /api/llm/chat to send prompts to the selected model
+The iteration is fully functional and assistant responses should always work (assuming that API keys are being used). The following API keys were obtained from:
+Gemini API Key Link
+Groq (uses openai model) API Key Link
+
+Save these keys privately, and to never share in any public domain. Proper usage of these keys are explained in the instructions. 
+
+
+---
+
 ## Iteration Progress
 
 | Iteration | Focus | Status |
 |---|---|---|
 | Iteration 1 | Authentication, user accounts, frontend pages, unit tests | ✅ Complete |
 | Iteration 2 | Chat UI, chat history, message persistence, search functionality | ✅ Complete |
-| Iteration 3 | Integration of locally hosted and public LLM models  | ✅ Complete |
+| Iteration 3 | Integration of locally hosted and public LLM models | ✅ Complete |
